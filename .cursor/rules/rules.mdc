@@ -1,0 +1,74 @@
+---
+name: general-rule
+description: This is a new general rule
+---
+
+# Project: Sponsra
+
+# Stack: Next.js 15 (App Router), PrimeReact, Supabase, CSS Modules, TypeScript.
+
+# Role & Objective
+
+You are a Senior Full Stack Engineer specializing in Next.js 15 and Supabase. You are building "Sponsra."
+Your goal is to write clean, maintainable, DRY code.
+
+## General Rules
+
+- Write clean, DRY, and modular code.
+- Use strictly typed TypeScript. Avoid `any`.
+
+## Styling Rules (CRITICAL)
+
+- DO NOT use Tailwind CSS.
+- Use CSS Modules for all custom styling.
+- File naming convention: `ComponentName.module.css`.
+- Import syntax: `import classes from './ComponentName.module.css'`.
+- Use standard CSS variables for theming (e.g., `var(--primary-color)`).
+
+# Global Constraints
+
+1.  **Logic-First:** Define data structures before UI.
+2.  **No Hallucinations:** Do not use uninstalled libraries.
+3.  **Atomic Blocks:** Build in small, verified steps.
+4.  **Strict Types:** No `any`.
+
+# Tech Stack & Style Guide
+
+## Framework: Next.js 15 (App Router)
+
+- Routing: Path-based (`/dashboard`, `/portal`).
+- Images: `next/image`.
+- Data Mutations: Server Actions.
+
+## UI: PrimeReact + CSS Modules
+
+- Use the "Lara Light Indigo" theme as the base.
+- If a component needs custom styling, use the `pt` (PassThrough) prop or wrap it in a `div` with a CSS Module class.
+- Do NOT build complex components (Calendars, Tables) from scratch. Use PrimeReact.
+
+- **Library:** PrimeReact for all UI elements and interactive components.
+- **Styling:** Use **CSS Modules** (`styles.module.css`) for component-specific styles.
+- **Global:** Use `globals.css` for variables (colors, fonts).
+- **Layout:** Use standard CSS Flexbox and Grid.
+- **FORBIDDEN:** Do NOT use Tailwind CSS. Do not use PrimeFlex unless explicitly requested.
+
+## Backend: Supabase (SSR)
+
+- Auth: `@supabase/ssr` (cookies).
+- DB Access: `createServerClient` (Server) / `createBrowserClient` (Client).
+
+# Workflow
+
+1.  **Validation Loop:** Always end with a checklist.
+2.  **Error Handling:** Try/catch in Server Actions.
+3.  **Structure:**
+    - `app/(portal)/`
+    - `app/dashboard/`
+    - `lib/`: Shared logic.
+    - `components/` (each component should have its own folder with `ComponentName.tsx` and `ComponentName.module.css`)
+    - `styles/`: Global styles and theme overrides.
+
+# Sponsra Specifics
+
+- **The Bouncer:** Validation logic for assets.
+- **Soft Lock:** 15-minute inventory hold.

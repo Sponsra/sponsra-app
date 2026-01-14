@@ -1,0 +1,12 @@
+/* app/globals.css */
+@import "primeicons/primeicons.css";
+
+/* We will load the theme via the <link> tag in layout, 
+   but we set defaults here to prevent flash of white */
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif;
+  background-color: var(--surface-ground);
+  color: var(--text-color);
+}
