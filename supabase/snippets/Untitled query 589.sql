@@ -4,7 +4,7 @@
 
 INSERT INTO public.newsletters (owner_id, name, slug, description)
 VALUES 
-  ('8a3fbf71-7318-417b-b5a2-4f7c88625567', 'The Frontier', 'frontier', 'Deep dives into space and tech.');
+  ('e43f8734-1e22-43bb-aa11-54a29f93b698', 'The Frontier', 'frontier', 'Deep dives into space and tech.');
 
 -- 2. Add some products
 INSERT INTO public.inventory_tiers (newsletter_id, name, type, price)

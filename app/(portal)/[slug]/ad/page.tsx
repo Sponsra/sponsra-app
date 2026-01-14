@@ -35,7 +35,11 @@ export default async function AdBookingPage({ params }: PageProps) {
         </div>
 
         <Card title="Book a Classified Ad">
-          <BookingForm tiers={adTiers} newsletterName={newsletter.name} />
+          <BookingForm
+            tiers={adTiers}
+            newsletterName={newsletter.name}
+            slug={slug}
+          />
         </Card>
       </div>
     </div>
