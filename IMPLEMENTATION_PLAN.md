@@ -90,26 +90,148 @@ Validation Check:
 
 [ ] "Copy HTML" generates valid code block.
 
-Phase 5: Landing Page & Launch Prep
+Phase 5: polish and UI
+
+- create a polished design and style
+- Fonts and color theme and overall feel fo the application
+- App should feel moderna nd friendly, but not sterile and dry. This should feel like a high end, polished product
+
+Phase 6: Landing Page & Launch Prep
 Goal: Marketing and Deployment configuration.
 
-Step 5.1: Landing Page (Hero, Value Prop).
+Step 6.1: Landing Page (Hero, Value Prop).
 
-Step 5.2: Interactive "Bouncer" Demo.
+Step 6.2: Interactive "Bouncer" Demo.
 
-Phase 6 (Launch): Vercel Deployment & Domain Middleware (sponsra.link rewrite).
-Step 6.1: Vercel Deployment
+Phase 7: The Rules Engine (Custom Constraints)
+Goal: Allow creators to define the "physics" of their ad slots.
+
+Research Findings:
+
+Headlines: Range from 30 chars (Google Ads/TLDR Quick Links) to 90 chars (Morning Brew).
+
+Body: Ranges from 140 chars (Tweet style) to 150 words (~800 chars) for Primary Sponsorships.
+
+Images: Standard aspect ratios are 1:1 (Square), 1.91:1 (Landscape), or None (Text-only ads).
+
+The Plan:
+
+DB: Add configuration columns to inventory_tiers (char_limit_headline, char_limit_body, image_requirement).
+
+UI: Update the Tier Form in the Dashboard to include an "Ad Specs" accordion.
+
+Logic: Update the Portal's AdCreative form to enforce these specific limits dynamically.
+
+Validation Check:
+
+[ ] Creator can set headline limit (e.g., 60 chars) for a tier.
+
+[ ] Creator can set body limit (e.g., 200 chars) for a tier.
+
+[ ] Creator can require/allow/forbid images with aspect ratio constraints.
+
+[ ] Portal form enforces limits in real-time with character counters.
+
+[ ] "Bouncer" rejects submissions that exceed limits.
+
+Phase 8: The Template Engine (Realistic Previews)
+Goal: Make the "Live Preview" look like the creator's actual newsletter on both mobile and desktop and light and dark mode (40% of users are on dark mode)
+
+The Problem: Currently, the preview is a generic grey card. It tells the sponsor nothing about how it will look in your email.
+
+The Plan:
+
+DB: Add a theme_config (JSON) column to newsletters to store brand colors, font family (Serif/Sans), and layout style.
+
+UI: Add a "Look & Feel" tab to Settings.
+
+Component: Build a NewsletterMockup component that wraps the ad in a 600px-wide email container with the creator's branding. Or different sized containers for a mobile view and a web view.
+
+Validation Check:
+
+[ ] Creator can set primary brand color, font family (Serif/Sans), and layout style.
+
+[ ] Preview shows mobile (320px) and desktop (600px) views.
+
+[ ] Preview supports light and dark mode toggle.
+
+[ ] Preview accurately reflects the creator's branding choices.
+
+[ ] Sponsor sees realistic preview before submitting.
+
+Phase 9: The Export Engine (Copy-Paste Handoff)
+Goal: Let creators move approved ads into Beehiiv/Substack/ConvertKit in 1 click.
+
+The Plan:
+
+UI: Add an "Export" dropdown to the Booking Review Modal.
+
+Formats:
+
+HTML (Email Ready): Standard table-based HTML with inline styles.
+
+Markdown: For tech newsletters/Obsidian users.
+
+Plain Text: Just the copy.
+
+Validation Check:
+
+[ ] Creator can export approved booking as HTML.
+
+[ ] Creator can export approved booking as Markdown.
+
+[ ] Creator can export approved booking as Plain Text.
+
+[ ] HTML export is email-client compatible (table-based, inline styles).
+
+[ ] Exported content can be pasted directly into newsletter platforms.
+
+Phase 10: Smart Links ("Magic" Invites)
+Goal: Personalize the booking experience like Calendly.
+
+Concept: Instead of just sending sponsra.com/my-newsletter, you send sponsra.com/my-newsletter?sponsor=Acme&tier=main.
+
+The Plan:
+
+UI: Add a "Share" button to the Dashboard.
+
+Feature: A modal where you pre-fill the Sponsor Name and select a Tier.
+
+Output: Generates a custom link that skips the Tier Selection step and pre-fills the sponsor's name, reducing friction.
+
+Validation Check:
+
+[ ] Creator can generate a personalized booking link.
+
+[ ] Link pre-fills sponsor name in the form.
+
+[ ] Link pre-selects a specific tier (skips tier selection step).
+
+[ ] Link works correctly when shared with sponsor.
+
+[ ] Sponsor experience is streamlined with pre-filled data.
+
+Phase 11 (Launch): Vercel Deployment & Domain Middleware (sponsra.link rewrite).
+Step 11.1: Vercel Deployment
 Push git repo to Vercel.
 Configure Environment Variables (Supabase URLs, Stripe Keys).
-Step 6.2: Domain Configuration
+Step 11.2: Domain Configuration
 Map sponsra.app to the main project.
 Map sponsra.link as a Middleware rewrite (or separate Vercel project if easier) to handle the portal routes.
-Step 6.3: Smoke Test
+Step 11.3: Smoke Test
 Create a real account on the live site.
 Book a real (test mode) ad.
 Validation Check:
 [ ] https://sponsra.app loads securely.
 [ ] https://sponsra.link/demo/ad loads the portal.
+
+Phase -- infinity
+Ideas that can be implemented in any phase or at the end or never. Just ideas.
+
+Ideas:
+
+- Clean simple booking page with a centered calendar (maybe glassmorphism with a subtle gradient background?) so it feels light and creative. Then the background could be changed to fit the vibe of the newsletter.
+
 How we will work:
 I will provide the code for one specific step (e.g., Step 1.2).
 You will implement it and run the Validation Check.

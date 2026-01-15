@@ -16,9 +16,19 @@ export async function createCheckoutSession(bookingId: string) {
     p_booking_id: bookingId,
   });
 
-  if (error || !data) {
+  if (error) {
     console.error("Checkout Data Error:", error);
-    throw new Error("Could not retrieve booking details");
+    throw new Error(`Could not retrieve booking details: ${error.message}`);
+  }
+
+  if (!data) {
+    console.error(
+      "Checkout Data Error: No data returned for booking",
+      bookingId
+    );
+    throw new Error(
+      "Could not retrieve booking details. Booking may not exist or be missing required information."
+    );
   }
 
   const { price, tier_name, stripe_account_id } = data as {

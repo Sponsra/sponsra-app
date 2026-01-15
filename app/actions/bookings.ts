@@ -2,6 +2,8 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
+import { createCheckoutSession } from "./stripe";
+import { redirect } from "next/navigation";
 
 // 1. Get Blocked Dates (for the Calendar)
 export async function getBookedDates(tierId: string) {
@@ -49,28 +51,47 @@ export async function createBooking(tierId: string, date: Date, slug: string) {
   return { success: true, bookingId: data };
 }
 
-// 3. Save Ad Content (Step 2)
 export async function saveAdCreative(
   bookingId: string,
-  content: { headline: string; body: string; link: string; sponsorName: string }
+  content: {
+    headline: string;
+    body: string;
+    link: string;
+    sponsorName: string;
+    imagePath?: string | null; // <--- Added type definition
+  }
 ) {
   const supabase = await createClient();
 
-  // Call the secure RPC function to update the content
+  // 1. Call the updated RPC function
+  // We pass the new imagePath argument.
   const { error } = await supabase.rpc("update_booking_content", {
     booking_id: bookingId,
     new_headline: content.headline,
     new_body: content.body,
     new_link: content.link,
     new_sponsor_name: content.sponsorName,
+    new_image_path: content.imagePath || null, // <--- Pass the path
   });
 
   if (error) {
     console.error("Error saving creative:", error);
-    return { success: false, message: error.message };
+    return {
+      success: false,
+      error: "Failed to save ad content. Please try again.",
+    };
   }
 
-  return { success: true };
+  // 2. Create Stripe Checkout Session
+  // This function (from stripe.ts) should look up the booking and generate the payment link
+  const checkoutResult = await createCheckoutSession(bookingId);
+
+  if (!checkoutResult.url) {
+    return { success: false, error: "Failed to initialize payment." };
+  }
+
+  // 3. Return the Stripe URL so the client can redirect
+  return { success: true, url: checkoutResult.url };
 }
 
 // 4. Get Owner's Dashboard Data
@@ -102,6 +123,7 @@ export async function getOwnerBookings() {
         ad_body,
         ad_link,
         sponsor_name,
+        ad_image_path,
         newsletter_id,
         inventory_tiers (
             name,

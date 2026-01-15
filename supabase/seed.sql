@@ -1,5 +1,12 @@
 -- 1. Create a Test User (auth.users)
 -- NOTE: The password is 'password'
+-- Delete existing data in correct order to avoid foreign key issues
+-- Delete in reverse dependency order
+DELETE FROM public.inventory_tiers WHERE newsletter_id = 'b1f0c999-9c0b-4ef8-bb6d-6bb9bd380a22';
+DELETE FROM public.newsletters WHERE id = 'b1f0c999-9c0b-4ef8-bb6d-6bb9bd380a22';
+DELETE FROM public.profiles WHERE id = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
+DELETE FROM auth.users WHERE id = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
+
 INSERT INTO auth.users (
     instance_id,
     id,
@@ -36,17 +43,22 @@ INSERT INTO auth.users (
     '',
     '',
     ''
-) ON CONFLICT (id) DO NOTHING;
+);
 
--- 2. Create the Public Profile
+-- 2. Create/Update the Public Profile
+-- Use DO UPDATE to ensure all fields are set correctly
 INSERT INTO public.profiles (id, username, full_name, avatar_url, stripe_account_id)
 VALUES (
     'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 
     'pilot_dev', 
     'Pilot Developer', 
     '', 
-    NULL -- Start unconnected so you can test the "Connect Stripe" flow
-) ON CONFLICT (id) DO NOTHING;
+    'acct_1SpZ0DF3JAAtRzzF' -- Stripe Connect account ID
+) ON CONFLICT (id) DO UPDATE SET
+    username = EXCLUDED.username,
+    full_name = EXCLUDED.full_name,
+    avatar_url = EXCLUDED.avatar_url,
+    stripe_account_id = EXCLUDED.stripe_account_id;
 
 -- 3. Create the Newsletter
 INSERT INTO public.newsletters (id, owner_id, name, slug, description)

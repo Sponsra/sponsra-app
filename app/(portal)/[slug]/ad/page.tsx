@@ -1,7 +1,8 @@
 import { getNewsletterBySlug } from "@/lib/portal";
 import { notFound } from "next/navigation";
 import { Card } from "primereact/card";
-import BookingForm from "./BookingForm"; // Import the new component
+import BookingForm from "./BookingForm";
+import { InventoryTierPublic } from "@/app/types/inventory";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -13,9 +14,9 @@ export default async function AdBookingPage({ params }: PageProps) {
 
   if (!newsletter) notFound();
 
-  const adTiers = newsletter.inventory_tiers.filter(
-    (t: any) => t.type === "ad" && t.is_active
-  );
+  const adTiers: InventoryTierPublic[] = (
+    newsletter.inventory_tiers || []
+  ).filter((t: InventoryTierPublic) => t.type === "ad" && t.is_active);
 
   return (
     <div

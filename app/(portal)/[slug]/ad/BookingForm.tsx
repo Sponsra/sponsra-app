@@ -8,24 +8,20 @@ import { Card } from "primereact/card";
 import { Message } from "primereact/message";
 import AdCreative from "./AdCreative";
 import { createBooking, getBookedDates } from "@/app/actions/bookings";
-
-interface Tier {
-  id: string;
-  name: string;
-  price: number;
-  description: string;
-}
+import { InventoryTierPublic } from "@/app/types/inventory";
 
 export default function BookingForm({
   tiers,
   newsletterName,
   slug,
 }: {
-  tiers: Tier[];
+  tiers: InventoryTierPublic[];
   newsletterName: string;
   slug: string;
 }) {
-  const [selectedTier, setSelectedTier] = useState<Tier | null>(null);
+  const [selectedTier, setSelectedTier] = useState<InventoryTierPublic | null>(
+    null
+  );
   const [date, setDate] = useState<Date | null>(null);
   const [loading, setLoading] = useState(false);
   const [bookingComplete, setBookingComplete] = useState(false);
@@ -70,7 +66,7 @@ export default function BookingForm({
 
       // Re-fetch the dates immediately so the user sees the greyed-out slot
       const dates = await getBookedDates(selectedTier.id);
-      const dateObjects = dates.map((d: string) => {
+      const dateObjects = dates.map((d: any) => {
         const [y, m, d_str] = d.split("-").map(Number);
         return new Date(y, m - 1, d_str);
       });
@@ -106,7 +102,7 @@ export default function BookingForm({
               />
               {selectedTier && (
                 <div className="text-sm text-600 surface-100 p-2 border-round">
-                  {selectedTier.description} —
+                  {selectedTier.description || "No description available"} —
                   <span className="font-bold text-green-600">
                     {" "}
                     ${(selectedTier.price / 100).toFixed(2)}

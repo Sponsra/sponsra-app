@@ -27,11 +27,15 @@ export default function BookingsTable({ bookings }: { bookings: any[] }) {
     return `${Number(month)}/${Number(day)}/${year}`;
   };
 
+  // Helper to build the image URL
+  const getImageUrl = (path: string) => {
+    if (!path) return null;
+    return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/ad-creatives/${path}`;
+  };
+
   // COLUMN 1: PAYMENT STATUS
   const paymentStatusTemplate = (rowData: any) => {
-    // If it is paid, approved, or rejected, the money was collected.
     const isPaid = ["paid", "approved", "rejected"].includes(rowData.status);
-
     if (isPaid) {
       return <Tag value="PAID" severity="success" icon="pi pi-dollar" />;
     }
@@ -42,7 +46,6 @@ export default function BookingsTable({ bookings }: { bookings: any[] }) {
   const reviewStatusTemplate = (rowData: any) => {
     switch (rowData.status) {
       case "paid":
-        // This is the specific state where money is in, but work is not done
         return (
           <Tag
             value="NEEDS REVIEW"
@@ -55,7 +58,6 @@ export default function BookingsTable({ bookings }: { bookings: any[] }) {
       case "rejected":
         return <Tag value="REJECTED" severity="danger" icon="pi pi-times" />;
       default:
-        // For unpaid/draft items, review status is N/A
         return <span className="text-500">-</span>;
     }
   };
@@ -86,109 +88,277 @@ export default function BookingsTable({ bookings }: { bookings: any[] }) {
         sortField="target_date"
         sortOrder={1}
         paginator
-        rows={5}
-        // Important: Pass row data to state even if column is hidden
+        rows={10}
+        className="modern-table"
         selectionMode="single"
+        emptyMessage="No bookings found"
       >
         <Column
           field="target_date"
           header="Date"
           sortable
-          body={(data) => formatDate(data.target_date)}
+          body={(data) => (
+            <div style={{ fontWeight: 600, color: "var(--text-color)" }}>
+              {formatDate(data.target_date)}
+            </div>
+          )}
+          style={{ minWidth: "120px" }}
         />
         <Column
           field="sponsor_name"
           header="Sponsor"
           body={(data) => (
-            <span className="font-bold">{data.sponsor_name || "Unknown"}</span>
+            <div
+              style={{
+                fontWeight: 600,
+                fontSize: "0.9375rem",
+                color: "var(--text-color)",
+              }}
+            >
+              {data.sponsor_name || "Unknown"}
+            </div>
           )}
+          style={{ minWidth: "150px" }}
         />
-
-        {/* NEW: Split Columns */}
-        <Column header="Payment" body={paymentStatusTemplate} />
-        <Column header="Review Status" body={reviewStatusTemplate} />
-
+        <Column
+          header="Payment"
+          body={paymentStatusTemplate}
+          style={{ minWidth: "120px" }}
+        />
+        <Column
+          header="Review Status"
+          body={reviewStatusTemplate}
+          style={{ minWidth: "140px" }}
+        />
         <Column
           field="inventory_tiers.price"
           header="Value"
-          body={(data) => formatCurrency(data.inventory_tiers?.price || 0)}
+          body={(data) => (
+            <div
+              style={{
+                fontWeight: 700,
+                color: "var(--primary-color)",
+                fontSize: "0.9375rem",
+              }}
+            >
+              {formatCurrency(data.inventory_tiers?.price || 0)}
+            </div>
+          )}
+          style={{ minWidth: "100px" }}
         />
-
         <Column
           body={(rowData) => (
             <Button
-              icon="pi pi-search"
+              icon="pi pi-eye"
               rounded
               text
               aria-label="View Details"
               onClick={() => setSelectedBooking(rowData)}
+              className="modern-button"
+              style={{
+                color: "var(--primary-color)",
+                padding: "0.5rem",
+              }}
             />
           )}
-          header="Action"
-          style={{ width: "10%" }}
+          header=""
+          style={{ width: "80px", textAlign: "center" }}
         />
       </DataTable>
 
       {/* REVIEW DIALOG */}
       <Dialog
-        header={`Review Ad: ${
-          selectedBooking?.sponsor_name || "Unknown Sponsor"
-        }`}
+        header={
+          <div
+            style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}
+          >
+            <i className="pi pi-file-edit text-primary"></i>
+            <span>
+              Review Ad: {selectedBooking?.sponsor_name || "Unknown Sponsor"}
+            </span>
+          </div>
+        }
         visible={!!selectedBooking}
-        style={{ width: "50vw", minWidth: "350px" }}
+        style={{ width: "50vw", minWidth: "400px" }}
         onHide={() => setSelectedBooking(null)}
+        className="modern-dialog"
+        pt={{
+          header: {
+            style: {
+              background: "var(--surface-0)",
+              borderBottom: "1px solid var(--surface-border)",
+              padding: "1.5rem",
+            },
+          },
+          content: { style: { padding: "1.5rem" } },
+        }}
       >
-        {/* TEMPORARY DEBUGGER: Delete this after it works */}
-        <div
-          className="bg-gray-900 text-green-400 p-3 text-xs font-mono overflow-auto mb-4"
-          style={{ maxHeight: "100px" }}
-        >
-          {JSON.stringify(selectedBooking, null, 2)}
-        </div>
         {selectedBooking && (
-          <div className="flex flex-column gap-3">
-            {/* Debug check: If this shows empty, the data isn't reaching the client */}
-            {/* <small>{JSON.stringify(selectedBooking)}</small> */}
+          <div
+            style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}
+          >
+            {/* --- NEW: IMAGE PREVIEW BLOCK --- */}
+            {selectedBooking.ad_image_path && (
+              <div
+                className="modern-card"
+                style={{ padding: "1.25rem", background: "var(--surface-50)" }}
+              >
+                <div
+                  style={{
+                    fontSize: "0.75rem",
+                    fontWeight: 700,
+                    color: "var(--text-color-secondary)",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.5px",
+                    marginBottom: "0.75rem",
+                  }}
+                >
+                  Ad Creative
+                </div>
+                <div style={{ textAlign: "center" }}>
+                  <img
+                    src={getImageUrl(selectedBooking.ad_image_path)!}
+                    alt="Ad Creative"
+                    style={{
+                      maxWidth: "100%",
+                      maxHeight: "300px",
+                      borderRadius: "8px",
+                      objectFit: "contain",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                      background: "white",
+                    }}
+                  />
+                  <div style={{ marginTop: "0.5rem", textAlign: "right" }}>
+                    <a
+                      href={getImageUrl(selectedBooking.ad_image_path)!}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        color: "var(--primary-color)",
+                        fontSize: "0.875rem",
+                        textDecoration: "none",
+                        fontWeight: 600,
+                      }}
+                    >
+                      View Full Size{" "}
+                      <i className="pi pi-external-link text-xs ml-1"></i>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            )}
+            {/* --------------------------------- */}
 
-            <div className="surface-100 p-3 border-round">
-              <div className="text-xs text-500 uppercase font-bold mb-1">
+            <div
+              className="modern-card"
+              style={{ padding: "1.25rem", background: "var(--surface-50)" }}
+            >
+              <div
+                style={{
+                  fontSize: "0.75rem",
+                  fontWeight: 700,
+                  color: "var(--text-color-secondary)",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.5px",
+                  marginBottom: "0.75rem",
+                }}
+              >
                 Headline
               </div>
-              <div className="font-bold text-xl">
+              <div
+                style={{
+                  fontWeight: 700,
+                  fontSize: "1.25rem",
+                  color: "var(--text-color)",
+                  lineHeight: "1.5",
+                }}
+              >
                 {selectedBooking.ad_headline || "No headline provided"}
               </div>
             </div>
 
-            <div className="surface-100 p-3 border-round">
-              <div className="text-xs text-500 uppercase font-bold mb-1">
+            <div
+              className="modern-card"
+              style={{ padding: "1.25rem", background: "var(--surface-50)" }}
+            >
+              <div
+                style={{
+                  fontSize: "0.75rem",
+                  fontWeight: 700,
+                  color: "var(--text-color-secondary)",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.5px",
+                  marginBottom: "0.75rem",
+                }}
+              >
                 Body Copy
               </div>
-              <div className="line-height-3" style={{ whiteSpace: "pre-wrap" }}>
+              <div
+                style={{
+                  lineHeight: "1.75",
+                  color: "var(--text-color)",
+                  whiteSpace: "pre-wrap",
+                }}
+              >
                 {selectedBooking.ad_body || "No body text provided"}
               </div>
             </div>
 
-            <div className="surface-100 p-3 border-round">
-              <div className="text-xs text-500 uppercase font-bold mb-1">
+            <div
+              className="modern-card"
+              style={{ padding: "1.25rem", background: "var(--surface-50)" }}
+            >
+              <div
+                style={{
+                  fontSize: "0.75rem",
+                  fontWeight: 700,
+                  color: "var(--text-color-secondary)",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.5px",
+                  marginBottom: "0.75rem",
+                }}
+              >
                 Link
               </div>
               {selectedBooking.ad_link ? (
                 <a
                   href={selectedBooking.ad_link}
                   target="_blank"
-                  className="text-primary hover:underline font-bold"
+                  rel="noopener noreferrer"
+                  style={{
+                    color: "var(--primary-color)",
+                    textDecoration: "none",
+                    fontWeight: 600,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                    transition: "opacity 0.2s",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.8")}
+                  onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
                 >
                   {selectedBooking.ad_link}
-                  <i className="pi pi-external-link ml-2 text-xs"></i>
+                  <i className="pi pi-external-link text-xs"></i>
                 </a>
               ) : (
-                <span>No link provided</span>
+                <span style={{ color: "var(--text-color-secondary)" }}>
+                  No link provided
+                </span>
               )}
             </div>
 
             {/* Action Buttons */}
             {selectedBooking.status === "paid" && (
-              <div className="flex justify-content-end gap-2 mt-4 pt-3 border-top-1 surface-border">
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  gap: "0.75rem",
+                  marginTop: "1rem",
+                  paddingTop: "1.25rem",
+                  borderTop: "1px solid var(--surface-border)",
+                }}
+              >
                 <Button
                   label="Reject"
                   severity="danger"
@@ -196,6 +366,7 @@ export default function BookingsTable({ bookings }: { bookings: any[] }) {
                   outlined
                   loading={loadingAction}
                   onClick={handleReject}
+                  className="modern-button"
                 />
                 <Button
                   label="Approve & Schedule"
@@ -203,13 +374,31 @@ export default function BookingsTable({ bookings }: { bookings: any[] }) {
                   icon="pi pi-check"
                   loading={loadingAction}
                   onClick={handleApprove}
+                  className="modern-button"
                 />
               </div>
             )}
 
             {selectedBooking.status === "approved" && (
-              <div className="mt-4 p-2 bg-green-100 text-green-700 border-round text-center font-bold">
-                <i className="pi pi-check-circle mr-2"></i> This ad is approved.
+              <div
+                style={{
+                  marginTop: "1rem",
+                  padding: "1rem",
+                  background:
+                    "linear-gradient(135deg, rgba(220, 252, 231, 0.8) 0%, rgba(187, 247, 208, 0.8) 100%)",
+                  borderRadius: "8px",
+                  border: "1px solid rgba(34, 197, 94, 0.3)",
+                  textAlign: "center",
+                  fontWeight: 600,
+                  color: "#15803d",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "0.5rem",
+                }}
+              >
+                <i className="pi pi-check-circle"></i>
+                <span>This ad is approved and scheduled</span>
               </div>
             )}
           </div>
