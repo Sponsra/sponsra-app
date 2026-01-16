@@ -3,7 +3,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
-import { TierFormData } from "@/app/types/inventory";
+import { TierFormData, NewsletterTheme } from "@/app/types/inventory";
 
 type ActionResponse = {
   success: boolean;
@@ -62,6 +62,9 @@ export async function upsertTier(data: TierFormData): Promise<ActionResponse> {
     price: data.price,
     description: data.description,
     is_active: data.is_active,
+    specs_headline_limit: data.specs_headline_limit,
+    specs_body_limit: data.specs_body_limit,
+    specs_image_ratio: data.specs_image_ratio,
   };
 
   let error;
@@ -107,6 +110,28 @@ export async function deleteTier(tierId: string): Promise<ActionResponse> {
     .delete()
     .eq("id", tierId)
     .eq("newsletter_id", newsletter.id);
+
+  if (error) return { success: false, error: error.message };
+
+  revalidatePath("/dashboard/settings");
+  return { success: true };
+}
+
+// 4. Update Newsletter Theme
+export async function updateNewsletterTheme(
+  theme: NewsletterTheme
+): Promise<ActionResponse> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { success: false, error: "Unauthorized" };
+
+  const { error } = await supabase
+    .from("newsletters")
+    .update({ theme_config: theme })
+    .eq("owner_id", user.id);
 
   if (error) return { success: false, error: error.message };
 

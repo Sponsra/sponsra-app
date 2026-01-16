@@ -8,6 +8,7 @@ import { InputNumber } from "primereact/inputnumber";
 import { InputTextarea } from "primereact/inputtextarea";
 import { Dropdown } from "primereact/dropdown";
 import { Checkbox } from "primereact/checkbox";
+import { Accordion, AccordionTab } from "primereact/accordion"; // <--- Import Accordion
 import { TierFormData } from "@/app/types/inventory";
 import styles from "./settings.module.css";
 
@@ -26,12 +27,16 @@ export default function TierFormDialog({
   initialData,
   loading,
 }: TierFormDialogProps) {
+  // Initialize with defaults including the new specs
   const [formData, setFormData] = useState<TierFormData>({
     name: "",
     type: "ad",
     price: 0,
     description: "",
     is_active: true,
+    specs_headline_limit: 60,
+    specs_body_limit: 280,
+    specs_image_ratio: "any",
   });
 
   // Reset form when dialog opens/data changes
@@ -44,12 +49,16 @@ export default function TierFormDialog({
         price: initialData?.price || 0,
         description: initialData?.description || "",
         is_active: initialData?.is_active ?? true,
+        // Load existing specs or fall back to defaults
+        specs_headline_limit: initialData?.specs_headline_limit || 60,
+        specs_body_limit: initialData?.specs_body_limit || 280,
+        specs_image_ratio: initialData?.specs_image_ratio || "any",
       });
     }
   }, [visible, initialData]);
 
   const handleSubmit = () => {
-    if (!formData.name || formData.price <= 0) return; // Basic validation
+    if (!formData.name || formData.price <= 0) return;
     onSave(formData);
   };
 
@@ -58,10 +67,17 @@ export default function TierFormDialog({
     { label: "Sponsorship", value: "sponsor" },
   ];
 
+  const imageRatioOptions = [
+    { label: "Any Aspect Ratio", value: "any" },
+    { label: "Square (1:1)", value: "1:1" },
+    { label: "Landscape (1.91:1)", value: "1.91:1" },
+    { label: "No Image Allowed", value: "no_image" },
+  ];
+
   return (
     <Dialog
       visible={visible}
-      style={{ width: "32rem" }}
+      style={{ width: "35rem" }} // Slightly wider for the accordion
       breakpoints={{ "960px": "75vw", "641px": "90vw" }}
       header={formData.id ? "Edit Tier" : "New Tier"}
       modal
@@ -86,6 +102,7 @@ export default function TierFormDialog({
       }
       onHide={onHide}
     >
+      {/* --- Main Settings --- */}
       <div className={styles.field}>
         <label htmlFor="name" style={{ fontWeight: "bold" }}>
           Name
@@ -143,6 +160,68 @@ export default function TierFormDialog({
           cols={20}
         />
       </div>
+
+      {/* --- Advanced Rules (New Section) --- */}
+      <Accordion className="mt-4" activeIndex={null}>
+        <AccordionTab header="Ad Constraints (The Rules)">
+          <div className="flex flex-column gap-3">
+            <div className="grid">
+              <div className="col-6">
+                <div className={styles.field}>
+                  <label htmlFor="headlineLimit">Headline Length</label>
+                  <InputNumber
+                    id="headlineLimit"
+                    value={formData.specs_headline_limit}
+                    onValueChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        specs_headline_limit: e.value || 60,
+                      })
+                    }
+                    min={10}
+                    max={200}
+                    suffix=" chars"
+                  />
+                </div>
+              </div>
+              <div className="col-6">
+                <div className={styles.field}>
+                  <label htmlFor="bodyLimit">Body Length</label>
+                  <InputNumber
+                    id="bodyLimit"
+                    value={formData.specs_body_limit}
+                    onValueChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        specs_body_limit: e.value || 280,
+                      })
+                    }
+                    min={50}
+                    max={5000}
+                    suffix=" chars"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.field}>
+              <label htmlFor="imageRatio">Image Requirement</label>
+              <Dropdown
+                id="imageRatio"
+                value={formData.specs_image_ratio}
+                options={imageRatioOptions}
+                onChange={(e) =>
+                  setFormData({ ...formData, specs_image_ratio: e.value })
+                }
+                optionLabel="label"
+              />
+              <small className="text-500 mt-1">
+                We will validate uploaded images against this rule.
+              </small>
+            </div>
+          </div>
+        </AccordionTab>
+      </Accordion>
 
       <div className="flex align-items-center mt-3 gap-2">
         <Checkbox

@@ -63,7 +63,56 @@ export async function saveAdCreative(
 ) {
   const supabase = await createClient();
 
-  // 1. Call the updated RPC function
+  // 1. Fetch the booking and tier info using RPC function (bypasses RLS)
+  const { data: bookingData, error: bookingError } = await supabase.rpc(
+    "get_booking_for_validation",
+    { p_booking_id: bookingId }
+  );
+
+  if (bookingError || !bookingData || bookingData.length === 0) {
+    console.error("Booking fetch error:", bookingError);
+    return {
+      success: false,
+      error: "Booking not found. Please try again.",
+    };
+  }
+
+  const booking = bookingData[0];
+  const tier = {
+    specs_headline_limit: booking.specs_headline_limit,
+    specs_body_limit: booking.specs_body_limit,
+    specs_image_ratio: booking.specs_image_ratio,
+  };
+
+  const errors: string[] = [];
+
+  // Validate headline length
+  if (content.headline.length > tier.specs_headline_limit) {
+    errors.push(
+      `Headline exceeds limit: ${content.headline.length}/${tier.specs_headline_limit} characters`
+    );
+  }
+
+  // Validate body length
+  if (content.body.length > tier.specs_body_limit) {
+    errors.push(
+      `Body text exceeds limit: ${content.body.length}/${tier.specs_body_limit} characters`
+    );
+  }
+
+  // Validate image requirement
+  if (tier.specs_image_ratio !== "no_image" && !content.imagePath) {
+    errors.push("An image is required for this ad type.");
+  }
+
+  if (errors.length > 0) {
+    return {
+      success: false,
+      error: errors.join(" "),
+    };
+  }
+
+  // 3. Call the updated RPC function
   // We pass the new imagePath argument.
   const { error } = await supabase.rpc("update_booking_content", {
     booking_id: bookingId,
@@ -82,7 +131,7 @@ export async function saveAdCreative(
     };
   }
 
-  // 2. Create Stripe Checkout Session
+  // 4. Create Stripe Checkout Session
   // This function (from stripe.ts) should look up the booking and generate the payment link
   const checkoutResult = await createCheckoutSession(bookingId);
 
@@ -90,7 +139,7 @@ export async function saveAdCreative(
     return { success: false, error: "Failed to initialize payment." };
   }
 
-  // 3. Return the Stripe URL so the client can redirect
+  // 5. Return the Stripe URL so the client can redirect
   return { success: true, url: checkoutResult.url };
 }
 
@@ -127,7 +176,10 @@ export async function getOwnerBookings() {
         newsletter_id,
         inventory_tiers (
             name,
-            price
+            price,
+            specs_headline_limit,
+            specs_body_limit,
+            specs_image_ratio
         )
     `
     )

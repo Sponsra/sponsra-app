@@ -36,14 +36,14 @@ export default function Sidebar() {
     {
       label: "Bookings",
       icon: "pi pi-calendar",
-      href: "/dashboard",
-      active: currentPath === "/dashboard",
+      href: "/dashboard/bookings",
+      active: currentPath === "/dashboard/bookings",
     },
     {
       label: "Inventory",
       icon: "pi pi-box",
-      href: "/dashboard",
-      active: false,
+      href: "/dashboard/inventory",
+      active: currentPath === "/dashboard/inventory",
     },
     {
       label: "Analytics",

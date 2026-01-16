@@ -232,6 +232,8 @@ Ideas:
 
 - Clean simple booking page with a centered calendar (maybe glassmorphism with a subtle gradient background?) so it feels light and creative. Then the background could be changed to fit the vibe of the newsletter.
 
+- Opengraph image for what the sponsra.link will look like when a user pastes it into a text or eail or somewhere it will render.
+
 How we will work:
 I will provide the code for one specific step (e.g., Step 1.2).
 You will implement it and run the Validation Check.

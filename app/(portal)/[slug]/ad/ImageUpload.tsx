@@ -9,17 +9,39 @@ import { createClient } from "@/utils/supabase/client";
 interface ImageUploadProps {
   onUploadComplete: (path: string) => void;
   bookingId: string;
+  requiredAspectRatio?: "any" | "1:1" | "1.91:1" | "no_image";
 }
 
 export default function ImageUpload({
   onUploadComplete,
   bookingId,
+  requiredAspectRatio = "any",
 }: ImageUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
   const supabase = createClient();
+
+  // Helper to check aspect ratio
+  const checkAspectRatio = (width: number, height: number, required: string): boolean => {
+    if (required === "any" || required === "no_image") return true;
+    
+    const actualRatio = width / height;
+    
+    if (required === "1:1") {
+      // Allow some tolerance for 1:1 (0.95 to 1.05)
+      return actualRatio >= 0.95 && actualRatio <= 1.05;
+    }
+    
+    if (required === "1.91:1") {
+      // Allow some tolerance for 1.91:1 (1.85 to 1.97)
+      const targetRatio = 1.91;
+      return actualRatio >= targetRatio * 0.97 && actualRatio <= targetRatio * 1.03;
+    }
+    
+    return true;
+  };
 
   const onSelect = async (e: FileUploadSelectEvent) => {
     setError(null);
@@ -32,6 +54,41 @@ export default function ImageUpload({
     if (file.size > 2 * 1024 * 1024) {
       setError("File is too large. Max size is 2MB.");
       return;
+    }
+
+    // 2. Validate aspect ratio if required
+    if (requiredAspectRatio !== "any" && requiredAspectRatio !== "no_image") {
+      try {
+        const img = new Image();
+        const objectUrl = URL.createObjectURL(file);
+        
+        await new Promise<void>((resolve, reject) => {
+          img.onload = () => {
+            const isValid = checkAspectRatio(img.width, img.height, requiredAspectRatio);
+            URL.revokeObjectURL(objectUrl);
+            
+            if (!isValid) {
+              const ratioLabel = requiredAspectRatio === "1:1" ? "Square (1:1)" : "Landscape (1.91:1)";
+              setError(
+                `Image aspect ratio doesn't match requirement. Required: ${ratioLabel}. ` +
+                `Your image: ${img.width}x${img.height} (${(img.width / img.height).toFixed(2)}:1)`
+              );
+              reject(new Error("Invalid aspect ratio"));
+            } else {
+              resolve();
+            }
+          };
+          img.onerror = () => {
+            URL.revokeObjectURL(objectUrl);
+            setError("Failed to load image. Please try another file.");
+            reject(new Error("Failed to load image"));
+          };
+          img.src = objectUrl;
+        });
+      } catch (err) {
+        // Error already set in the promise, just return
+        return;
+      }
     }
 
     setUploading(true);

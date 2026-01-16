@@ -3,10 +3,13 @@ import { redirect } from "next/navigation";
 import { Button } from "primereact/button";
 import BookingsTable from "./BookingsTable";
 import Sidebar from "./Sidebar";
+import DashboardHeader from "./DashboardHeader";
 import {
   createStripeConnectAccount,
   getStripeStatus,
 } from "@/app/actions/stripe-connect";
+import type { InventoryTier, NewsletterTheme } from "@/app/types/inventory";
+import type { Booking } from "@/app/types/booking";
 
 export default async function Dashboard() {
   const supabase = await createClient();
@@ -23,7 +26,7 @@ export default async function Dashboard() {
     .from("newsletters")
     .select(
       `
-        id, name, slug, 
+        id, name, slug, theme_config,
         inventory_tiers(*),
         bookings(
             id, target_date, status, ad_headline, ad_body, ad_link, sponsor_name, ad_image_path,
@@ -37,16 +40,35 @@ export default async function Dashboard() {
   // 3. Check Stripe Status (for the Warning Banner)
   const isStripeConnected = await getStripeStatus();
 
+  const tiers: InventoryTier[] = newsletter?.inventory_tiers || [];
+
   // 4. Calculate Stats
-  const bookings = newsletter?.bookings || [];
+  const bookings: Booking[] = newsletter?.bookings || [];
+  const recentBookings = [...bookings]
+    .sort(
+      (a, b) =>
+        new Date(b.target_date).getTime() - new Date(a.target_date).getTime()
+    )
+    .slice(0, 5);
+
+  const theme: NewsletterTheme = {
+    primary_color: newsletter?.theme_config?.primary_color || "#3b82f6",
+    font_family: newsletter?.theme_config?.font_family || "sans",
+    layout_style: newsletter?.theme_config?.layout_style || "minimal",
+  };
 
   const pendingCount = bookings.filter(
-    (b: any) => b.status === "draft" || b.status === "pending_payment"
+    (b) => b.status === "draft" || b.status === "pending_payment"
   ).length;
 
   const revenueCents = bookings
-    .filter((b: any) => b.status === "paid" || b.status === "approved")
-    .reduce((sum: number, b: any) => sum + (b.inventory_tiers?.price || 0), 0);
+    .filter((b) => b.status === "paid" || b.status === "approved")
+    .reduce((sum, b) => {
+      const tier = Array.isArray(b.inventory_tiers)
+        ? b.inventory_tiers[0]
+        : b.inventory_tiers;
+      return sum + (tier?.price || 0);
+    }, 0);
 
   // Helper for top-level currency display
   const formatCurrency = (value: number) => {
@@ -96,30 +118,11 @@ export default async function Dashboard() {
           </div>
         )}
 
-        {/* HEADER */}
-        <div className="dashboard-header">
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "flex-start",
-            }}
-          >
-            <div>
-              <h1>{newsletter?.name || "Creator Office"}</h1>
-              <p className="dashboard-header-subtitle">
-                {newsletter
-                  ? `sponsra.link/${newsletter.slug}`
-                  : "Set up your newsletter to start"}
-              </p>
-            </div>
-            <Button
-              label="New Booking"
-              icon="pi pi-plus"
-              className="modern-button"
-            />
-          </div>
-        </div>
+        <DashboardHeader
+          newsletterName={newsletter?.name || "Creator"}
+          newsletterSlug={newsletter?.slug || ""}
+          tiers={tiers}
+        />
 
         {/* STATS ROW */}
         <div className="stats-grid">
@@ -175,14 +178,14 @@ export default async function Dashboard() {
               Manage and review your sponsorship bookings
             </p>
           </div>
-          {bookings.length === 0 ? (
+          {recentBookings.length === 0 ? (
             <div className="empty-state">
               <i className="pi pi-inbox"></i>
               <h3>No bookings yet</h3>
               <p>Share your link to get your first sponsor!</p>
             </div>
           ) : (
-            <BookingsTable bookings={bookings} />
+            <BookingsTable bookings={recentBookings} theme={theme} />
           )}
         </div>
       </div>

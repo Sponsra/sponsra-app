@@ -1,23 +1,34 @@
+// app/(portal)/[slug]/ad/BookingForm.tsx
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { Calendar } from "primereact/calendar";
 import { Dropdown } from "primereact/dropdown";
 import { Button } from "primereact/button";
 import { Card } from "primereact/card";
-import { Message } from "primereact/message";
-import AdCreative from "./AdCreative";
+import AdCreative from "./AdCreative"; // Import the updated component
 import { createBooking, getBookedDates } from "@/app/actions/bookings";
-import { InventoryTierPublic } from "@/app/types/inventory";
+import { InventoryTierPublic, NewsletterTheme } from "@/app/types/inventory";
+
+type BookedDateItem = { target_date?: string | null } | string;
+
+const toDateFromBookedItem = (item: BookedDateItem) => {
+  const dateStr = typeof item === "string" ? item : item.target_date || "";
+  const [y, m, d] = dateStr.split("-").map(Number);
+  return new Date(y, m - 1, d);
+};
 
 export default function BookingForm({
   tiers,
   newsletterName,
   slug,
+  theme,
 }: {
   tiers: InventoryTierPublic[];
   newsletterName: string;
   slug: string;
+  theme: NewsletterTheme;
 }) {
   const [selectedTier, setSelectedTier] = useState<InventoryTierPublic | null>(
     null
@@ -27,20 +38,31 @@ export default function BookingForm({
   const [bookingComplete, setBookingComplete] = useState(false);
   const [bookingId, setBookingId] = useState<string>("");
   const [disabledDates, setDisabledDates] = useState<Date[]>([]);
+  const [prefilledSponsor, setPrefilledSponsor] = useState("");
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const tierId = searchParams.get("tier");
+    if (tierId && tiers.length > 0) {
+      const foundTier = tiers.find((tier) => tier.id === tierId);
+      if (foundTier) {
+        setSelectedTier(foundTier);
+      }
+    }
+
+    const sponsor = searchParams.get("sponsor");
+    if (sponsor) {
+      setPrefilledSponsor(sponsor);
+    }
+  }, [searchParams, tiers]);
 
   // 1. Fetch Blocked Dates whenever the User picks a Tier
   useEffect(() => {
     if (selectedTier) {
       setLoading(true);
       getBookedDates(selectedTier.id)
-        .then((data: any[]) => {
-          // We cast to any[] to safely handle whether Supabase returns
-          // ["2026-01-01"] or [{ target_date: "2026-01-01" }]
-          const dateObjects = data.map((item) => {
-            const dateStr = item.target_date || item; // Handle object or string
-            const [y, m, d] = dateStr.split("-").map(Number);
-            return new Date(y, m - 1, d);
-          });
+        .then((data: BookedDateItem[]) => {
+          const dateObjects = data.map(toDateFromBookedItem);
           setDisabledDates(dateObjects);
         })
         .finally(() => setLoading(false));
@@ -51,47 +73,103 @@ export default function BookingForm({
     if (!date || !selectedTier) return;
     setLoading(true);
 
-    // 2. Attempt to Book
     const result = await createBooking(selectedTier.id, date, slug);
 
     if (result.success && result.bookingId) {
-      // Success: Move to Step 2 (Ad Content)
       setBookingId(result.bookingId);
       setBookingComplete(true);
     } else {
-      // Failure (Likely "Date Taken"): Show error and refresh calendar
       alert(
         result.message || "This date was just taken. Please choose another."
       );
 
-      // Re-fetch the dates immediately so the user sees the greyed-out slot
-      const dates = await getBookedDates(selectedTier.id);
-      const dateObjects = dates.map((d: any) => {
-        const [y, m, d_str] = d.split("-").map(Number);
-        return new Date(y, m - 1, d_str);
-      });
+      // Refresh blocked dates
+      const dates = (await getBookedDates(selectedTier.id)) as BookedDateItem[];
+      const dateObjects = dates.map(toDateFromBookedItem);
       setDisabledDates(dateObjects);
-
-      // Clear their invalid selection
       setDate(null);
     }
     setLoading(false);
   };
 
-  // If Step 1 is done, render Step 2 (The Creative Form)
-  if (bookingComplete) {
-    return <AdCreative newsletterName={newsletterName} bookingId={bookingId} />;
+  // --- STEP 2: RENDER CREATIVE FORM WITH RULES ---
+  if (bookingComplete && selectedTier) {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          backgroundColor: "var(--surface-ground)",
+        }}
+      >
+        <div
+          style={{
+            padding: "2rem 0",
+            textAlign: "center",
+            background:
+              "linear-gradient(to bottom, var(--surface-0), var(--surface-ground))",
+            borderBottom: "1px solid var(--surface-border)",
+            marginBottom: "1rem",
+          }}
+        >
+          <h1 className="text-3xl font-bold mb-2 text-900">{newsletterName}</h1>
+          <p className="text-lg text-600">Create Your Ad</p>
+        </div>
+        <AdCreative
+          newsletterName={newsletterName}
+          bookingId={bookingId}
+          tier={selectedTier} // <--- PASSING THE TIER (RULES) HERE
+          theme={theme}
+          initialSponsorName={prefilledSponsor}
+        />
+      </div>
+    );
   }
 
-  // Step 1: The Booking Form
+  // --- STEP 1: RENDER BOOKING SELECTION ---
   return (
-    <div className="grid">
-      <div className="col-12 md:col-6 md:col-offset-3">
-        <Card title={`Book an Ad in ${newsletterName}`}>
-          <div className="flex flex-column gap-4">
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "flex-start",
+        padding: "3rem 1rem",
+      }}
+    >
+      <div style={{ maxWidth: "600px", width: "100%" }}>
+        <div className="text-center mb-5">
+          <h1 className="text-3xl font-bold mb-2 text-900">{newsletterName}</h1>
+          <p className="text-xl text-600">Booking Portal</p>
+        </div>
+        <Card
+          title={`Book an Ad in ${newsletterName}`}
+          style={{
+            border: "none",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06)",
+            borderRadius: "12px",
+          }}
+          pt={{
+            body: { style: { padding: "2rem" } },
+            title: {
+              style: {
+                fontSize: "1.5rem",
+                fontWeight: 700,
+                marginBottom: "0.5rem",
+                paddingBottom: "1rem",
+                borderBottom: "1px solid var(--surface-border)",
+              },
+            },
+          }}
+        >
+          <div className="flex flex-column" style={{ gap: "1.5rem" }}>
             {/* Tier Selection */}
-            <div className="flex flex-column gap-2">
-              <label className="font-bold">Select Ad Type</label>
+            <div className="flex flex-column" style={{ gap: "0.75rem" }}>
+              <label
+                className="font-semibold"
+                style={{ fontSize: "0.875rem", color: "var(--text-color)" }}
+              >
+                Select Ad Type
+              </label>
               <Dropdown
                 value={selectedTier}
                 onChange={(e) => setSelectedTier(e.value)}
@@ -99,34 +177,95 @@ export default function BookingForm({
                 optionLabel="name"
                 placeholder="Choose a placement"
                 className="w-full"
+                emptyMessage="No ad slots available."
+                style={{ padding: "0.75rem" }}
               />
               {selectedTier && (
-                <div className="text-sm text-600 surface-100 p-2 border-round">
-                  {selectedTier.description || "No description available"} —
-                  <span className="font-bold text-green-600">
-                    {" "}
+                <div
+                  className="text-600"
+                  style={{
+                    padding: "1.25rem",
+                    background: "var(--surface-50)",
+                    borderRadius: "8px",
+                    border: "1px solid var(--surface-border)",
+                    marginTop: "0.5rem",
+                  }}
+                >
+                  <div
+                    className="font-bold text-green-600"
+                    style={{ fontSize: "1.5rem", marginBottom: "0.5rem" }}
+                  >
                     ${(selectedTier.price / 100).toFixed(2)}
-                  </span>
+                  </div>
+                  <div style={{ marginBottom: "1rem", fontSize: "0.9375rem" }}>
+                    {selectedTier.description || "No description available"}
+                  </div>
+
+                  {/* Show Rules Preview to User */}
+                  <div
+                    className="text-500"
+                    style={{
+                      fontSize: "0.8125rem",
+                      paddingTop: "1rem",
+                      borderTop: "1px solid var(--surface-border)",
+                    }}
+                  >
+                    <div
+                      className="font-semibold mb-2"
+                      style={{ color: "var(--text-color)" }}
+                    >
+                      Ad Requirements:
+                    </div>
+                    <div style={{ lineHeight: "1.75" }}>
+                      <div>
+                        • Headline: {selectedTier.specs_headline_limit}{" "}
+                        characters max
+                      </div>
+                      <div>
+                        • Body: {selectedTier.specs_body_limit} characters max
+                      </div>
+                      {selectedTier.specs_image_ratio === "no_image" ? (
+                        <div>• No image required</div>
+                      ) : selectedTier.specs_image_ratio === "1:1" ? (
+                        <div>• Image: Square (1:1) aspect ratio required</div>
+                      ) : selectedTier.specs_image_ratio === "1.91:1" ? (
+                        <div>
+                          • Image: Landscape (1.91:1) aspect ratio required
+                        </div>
+                      ) : (
+                        <div>• Image: Any aspect ratio</div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
 
             {/* Date Selection */}
-            <div className="flex flex-column gap-2">
-              <label className="font-bold">Select Date</label>
-              <Calendar
-                value={date}
-                onChange={(e) => setDate(e.value as Date)}
-                inline
-                minDate={new Date()}
-                disabledDates={disabledDates} // <--- The magic blocking array
-                disabled={!selectedTier}
-              />
-              {!selectedTier && (
-                <small className="text-secondary">
-                  Please select an ad type first.
-                </small>
-              )}
+            <div className="flex flex-column" style={{ gap: "0.75rem" }}>
+              <label
+                className="font-semibold"
+                style={{ fontSize: "0.875rem", color: "var(--text-color)" }}
+              >
+                Select Date
+              </label>
+              <div
+                style={{
+                  background: "var(--surface-0)",
+                  borderRadius: "8px",
+                  padding: "1rem",
+                  border: "1px solid var(--surface-border)",
+                }}
+              >
+                <Calendar
+                  value={date}
+                  onChange={(e) => setDate(e.value as Date)}
+                  inline
+                  minDate={new Date()}
+                  disabledDates={disabledDates}
+                  disabled={!selectedTier}
+                />
+              </div>
             </div>
 
             {/* Submit Button */}
@@ -137,6 +276,13 @@ export default function BookingForm({
               onClick={handleSubmit}
               loading={loading}
               disabled={!date || !selectedTier}
+              style={{
+                marginTop: "0.5rem",
+                padding: "0.875rem",
+                fontSize: "1rem",
+                fontWeight: 600,
+              }}
+              className="w-full"
             />
           </div>
         </Card>

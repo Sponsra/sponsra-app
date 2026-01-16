@@ -3,12 +3,12 @@ import { redirect } from "next/navigation";
 import Sidebar from "../Sidebar";
 import AppearanceSettings from "./AppearanceSettings";
 import NewsletterSettings from "./NewsletterSettings";
-import InventoryManager from "./InventoryManager"; // <--- Import the manager
+import BrandingSettings from "./BrandingSettings"; // <--- Import
 import styles from "./settings.module.css";
+import type { NewsletterTheme } from "@/app/types/inventory";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
-
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -20,13 +20,12 @@ export default async function SettingsPage() {
     .eq("owner_id", user.id)
     .single();
 
-  const { data: tiers } = newsletter
-    ? await supabase
-        .from("inventory_tiers")
-        .select("*")
-        .eq("newsletter_id", newsletter.id)
-        .order("price", { ascending: true })
-    : { data: [] };
+  // Default theme fallback
+  const theme: NewsletterTheme = newsletter?.theme_config || {
+    primary_color: "#3b82f6",
+    font_family: "sans",
+    layout_style: "minimal",
+  };
 
   return (
     <div className="dashboard-layout">
@@ -36,7 +35,7 @@ export default async function SettingsPage() {
           <div>
             <h1>Settings</h1>
             <p className="dashboard-header-subtitle">
-              Manage your newsletter, inventory, and preferences
+              Manage your newsletter and preferences
             </p>
           </div>
         </div>
@@ -46,8 +45,11 @@ export default async function SettingsPage() {
 
           <NewsletterSettings initialData={newsletter} />
 
-          {/* FINAL COMPONENT ADDED */}
-          <InventoryManager initialTiers={tiers || []} />
+          {/* NEW: Branding Settings */}
+          <BrandingSettings
+            initialTheme={theme}
+            newsletterName={newsletter?.name || "Your Newsletter"}
+          />
         </div>
       </div>
     </div>

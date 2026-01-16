@@ -5,14 +5,29 @@ import { Column } from "primereact/column";
 import { Tag } from "primereact/tag";
 import { Button } from "primereact/button";
 import { Dialog } from "primereact/dialog";
-import { useState } from "react";
+import { SplitButton } from "primereact/splitbutton";
+import { Toast } from "primereact/toast";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { approveBooking, rejectBooking } from "@/app/actions/bookings";
+import {
+  generateHTML,
+  generateMarkdown,
+  generatePlainText,
+} from "@/utils/supabase/ad-export";
+import type { NewsletterTheme } from "@/app/types/inventory";
+import type { Booking } from "@/app/types/booking";
 
-export default function BookingsTable({ bookings }: { bookings: any[] }) {
-  const [selectedBooking, setSelectedBooking] = useState<any>(null);
+interface BookingsTableProps {
+  bookings: Booking[];
+  theme: NewsletterTheme;
+}
+
+export default function BookingsTable({ bookings, theme }: BookingsTableProps) {
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [loadingAction, setLoadingAction] = useState(false);
   const router = useRouter();
+  const toast = useRef<Toast>(null);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -23,18 +38,30 @@ export default function BookingsTable({ bookings }: { bookings: any[] }) {
 
   const formatDate = (dateString: string) => {
     if (!dateString) return "";
-    const [year, month, day] = dateString.split("-");
-    return `${Number(month)}/${Number(day)}/${year}`;
+    const [year, month, day] = dateString.split("-").map(Number);
+    const date = new Date(year, month - 1, day);
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "2-digit",
+      year: "numeric",
+    });
   };
 
   // Helper to build the image URL
-  const getImageUrl = (path: string) => {
+  const getImageUrl = (path?: string | null) => {
     if (!path) return null;
     return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/ad-creatives/${path}`;
   };
 
+  const getInventoryTier = (booking: Booking | null) => {
+    if (!booking?.inventory_tiers) return null;
+    return Array.isArray(booking.inventory_tiers)
+      ? booking.inventory_tiers[0] || null
+      : booking.inventory_tiers;
+  };
+
   // COLUMN 1: PAYMENT STATUS
-  const paymentStatusTemplate = (rowData: any) => {
+  const paymentStatusTemplate = (rowData: Booking) => {
     const isPaid = ["paid", "approved", "rejected"].includes(rowData.status);
     if (isPaid) {
       return <Tag value="PAID" severity="success" icon="pi pi-dollar" />;
@@ -43,7 +70,7 @@ export default function BookingsTable({ bookings }: { bookings: any[] }) {
   };
 
   // COLUMN 2: REVIEW STATUS
-  const reviewStatusTemplate = (rowData: any) => {
+  const reviewStatusTemplate = (rowData: Booking) => {
     switch (rowData.status) {
       case "paid":
         return (
@@ -81,8 +108,130 @@ export default function BookingsTable({ bookings }: { bookings: any[] }) {
     router.refresh();
   };
 
+  const copyToClipboard = async (text: string, format: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.current?.show({
+        severity: "success",
+        summary: "Copied!",
+        detail: `${format} copied to clipboard. Ready to paste!`,
+        life: 3000,
+      });
+    } catch {
+      toast.current?.show({
+        severity: "error",
+        summary: "Copy failed",
+        detail: "Unable to copy to clipboard. Please try again.",
+        life: 3000,
+      });
+    }
+  };
+
+  const buildAdContent = (booking: Booking) => ({
+    sponsorName: booking.sponsor_name || "Unknown Sponsor",
+    headline: booking.ad_headline || "",
+    body: booking.ad_body || "",
+    link: booking.ad_link || "",
+    imageUrl: getImageUrl(booking.ad_image_path),
+  });
+
+  const handleExportHtml = () => {
+    if (!selectedBooking) return;
+    const code = generateHTML(
+      buildAdContent(selectedBooking),
+      theme.primary_color
+    );
+    void copyToClipboard(code, "HTML");
+  };
+
+  const handleExportMarkdown = () => {
+    if (!selectedBooking) return;
+    const code = generateMarkdown(buildAdContent(selectedBooking));
+    void copyToClipboard(code, "Markdown");
+  };
+
+  const handleExportPlainText = () => {
+    if (!selectedBooking) return;
+    const code = generatePlainText(buildAdContent(selectedBooking));
+    void copyToClipboard(code, "Plain Text");
+  };
+
+  const getExportItems = () => [
+    {
+      label: "Copy Markdown",
+      icon: "pi pi-file-edit",
+      command: handleExportMarkdown,
+    },
+    {
+      label: "Copy Plain Text",
+      icon: "pi pi-align-left",
+      command: handleExportPlainText,
+    },
+  ];
+
+  const renderDialogFooter = () => {
+    if (!selectedBooking) return null;
+
+    return (
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          width: "100%",
+          gap: "1rem",
+        }}
+      >
+        <div>
+          {selectedBooking.status === "approved" && (
+            <SplitButton
+              label="Export HTML"
+              icon="pi pi-copy"
+              onClick={handleExportHtml}
+              model={getExportItems()}
+              severity="secondary"
+              size="small"
+              outlined
+            />
+          )}
+        </div>
+
+        <div style={{ display: "flex", gap: "0.75rem" }}>
+          {selectedBooking.status === "paid" && (
+            <>
+              <Button
+                label="Reject"
+                severity="danger"
+                icon="pi pi-times"
+                outlined
+                onClick={handleReject}
+                loading={loadingAction}
+                className="modern-button"
+              />
+              <Button
+                label="Approve"
+                severity="success"
+                icon="pi pi-check"
+                onClick={handleApprove}
+                loading={loadingAction}
+                className="modern-button"
+              />
+            </>
+          )}
+          <Button
+            label="Close"
+            icon="pi pi-times"
+            text
+            onClick={() => setSelectedBooking(null)}
+          />
+        </div>
+      </div>
+    );
+  };
+
   return (
     <>
+      <Toast ref={toast} />
       <DataTable
         value={bookings}
         sortField="target_date"
@@ -97,17 +246,17 @@ export default function BookingsTable({ bookings }: { bookings: any[] }) {
           field="target_date"
           header="Date"
           sortable
-          body={(data) => (
+          body={(data: Booking) => (
             <div style={{ fontWeight: 600, color: "var(--text-color)" }}>
               {formatDate(data.target_date)}
             </div>
           )}
-          style={{ minWidth: "120px" }}
+          style={{ minWidth: "150px" }}
         />
         <Column
           field="sponsor_name"
           header="Sponsor"
-          body={(data) => (
+          body={(data: Booking) => (
             <div
               style={{
                 fontWeight: 600,
@@ -133,7 +282,7 @@ export default function BookingsTable({ bookings }: { bookings: any[] }) {
         <Column
           field="inventory_tiers.price"
           header="Value"
-          body={(data) => (
+          body={(data: Booking) => (
             <div
               style={{
                 fontWeight: 700,
@@ -141,13 +290,13 @@ export default function BookingsTable({ bookings }: { bookings: any[] }) {
                 fontSize: "0.9375rem",
               }}
             >
-              {formatCurrency(data.inventory_tiers?.price || 0)}
+              {formatCurrency(getInventoryTier(data)?.price || 0)}
             </div>
           )}
           style={{ minWidth: "100px" }}
         />
         <Column
-          body={(rowData) => (
+          body={(rowData: Booking) => (
             <Button
               icon="pi pi-eye"
               rounded
@@ -182,6 +331,7 @@ export default function BookingsTable({ bookings }: { bookings: any[] }) {
         style={{ width: "50vw", minWidth: "400px" }}
         onHide={() => setSelectedBooking(null)}
         className="modern-dialog"
+        footer={renderDialogFooter()}
         pt={{
           header: {
             style: {
@@ -261,9 +411,34 @@ export default function BookingsTable({ bookings }: { bookings: any[] }) {
                   textTransform: "uppercase",
                   letterSpacing: "0.5px",
                   marginBottom: "0.75rem",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
                 }}
               >
-                Headline
+                <span>Headline</span>
+                {getInventoryTier(selectedBooking)?.specs_headline_limit && (
+                  <span
+                    style={{
+                      fontSize: "0.7rem",
+                      color:
+                        (selectedBooking.ad_headline?.length || 0) >
+                        (getInventoryTier(selectedBooking)
+                          ?.specs_headline_limit || Infinity)
+                          ? "var(--red-500)"
+                          : "var(--text-color-secondary)",
+                    }}
+                  >
+                    {selectedBooking.ad_headline?.length || 0}/
+                    {getInventoryTier(selectedBooking)?.specs_headline_limit}{" "}
+                    chars
+                    {(selectedBooking.ad_headline?.length || 0) >
+                      (getInventoryTier(selectedBooking)
+                        ?.specs_headline_limit || Infinity) && (
+                      <i className="pi pi-exclamation-triangle ml-1" />
+                    )}
+                  </span>
+                )}
               </div>
               <div
                 style={{
@@ -275,6 +450,27 @@ export default function BookingsTable({ bookings }: { bookings: any[] }) {
               >
                 {selectedBooking.ad_headline || "No headline provided"}
               </div>
+              {(selectedBooking.ad_headline?.length || 0) >
+                (getInventoryTier(selectedBooking)?.specs_headline_limit ||
+                  Infinity) && (
+                <div
+                  style={{
+                    marginTop: "0.5rem",
+                    padding: "0.5rem",
+                    background: "rgba(239, 68, 68, 0.1)",
+                    borderRadius: "4px",
+                    color: "var(--red-600)",
+                    fontSize: "0.875rem",
+                  }}
+                >
+                  <i className="pi pi-exclamation-triangle mr-1" />
+                  Headline exceeds limit by{" "}
+                  {(selectedBooking.ad_headline?.length || 0) -
+                    (getInventoryTier(selectedBooking)?.specs_headline_limit ||
+                      0)}{" "}
+                  characters
+                </div>
+              )}
             </div>
 
             <div
@@ -289,19 +485,66 @@ export default function BookingsTable({ bookings }: { bookings: any[] }) {
                   textTransform: "uppercase",
                   letterSpacing: "0.5px",
                   marginBottom: "0.75rem",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
                 }}
               >
-                Body Copy
+                <span>Body Copy</span>
+                {getInventoryTier(selectedBooking)?.specs_body_limit && (
+                  <span
+                    style={{
+                      fontSize: "0.7rem",
+                      color:
+                        (selectedBooking.ad_body?.length || 0) >
+                        (getInventoryTier(selectedBooking)?.specs_body_limit ||
+                          Infinity)
+                          ? "var(--red-500)"
+                          : "var(--text-color-secondary)",
+                    }}
+                  >
+                    {selectedBooking.ad_body?.length || 0}/
+                    {getInventoryTier(selectedBooking)?.specs_body_limit} chars
+                    {(selectedBooking.ad_body?.length || 0) >
+                      (getInventoryTier(selectedBooking)?.specs_body_limit ||
+                        Infinity) && (
+                      <i className="pi pi-exclamation-triangle ml-1" />
+                    )}
+                  </span>
+                )}
               </div>
               <div
                 style={{
                   lineHeight: "1.75",
                   color: "var(--text-color)",
                   whiteSpace: "pre-wrap",
+                  maxHeight: "300px",
+                  overflowY: "auto",
                 }}
               >
                 {selectedBooking.ad_body || "No body text provided"}
               </div>
+              {(selectedBooking.ad_body?.length || 0) >
+                (getInventoryTier(selectedBooking)?.specs_body_limit ||
+                  Infinity) && (
+                <div
+                  style={{
+                    marginTop: "0.5rem",
+                    padding: "0.5rem",
+                    background: "rgba(239, 68, 68, 0.1)",
+                    borderRadius: "4px",
+                    color: "var(--red-600)",
+                    fontSize: "0.875rem",
+                  }}
+                >
+                  <i className="pi pi-exclamation-triangle mr-1" />
+                  Body text exceeds limit by{" "}
+                  {(selectedBooking.ad_body?.length || 0) -
+                    (getInventoryTier(selectedBooking)?.specs_body_limit ||
+                      0)}{" "}
+                  characters
+                </div>
+              )}
             </div>
 
             <div
@@ -346,38 +589,6 @@ export default function BookingsTable({ bookings }: { bookings: any[] }) {
                 </span>
               )}
             </div>
-
-            {/* Action Buttons */}
-            {selectedBooking.status === "paid" && (
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "flex-end",
-                  gap: "0.75rem",
-                  marginTop: "1rem",
-                  paddingTop: "1.25rem",
-                  borderTop: "1px solid var(--surface-border)",
-                }}
-              >
-                <Button
-                  label="Reject"
-                  severity="danger"
-                  icon="pi pi-times"
-                  outlined
-                  loading={loadingAction}
-                  onClick={handleReject}
-                  className="modern-button"
-                />
-                <Button
-                  label="Approve & Schedule"
-                  severity="success"
-                  icon="pi pi-check"
-                  loading={loadingAction}
-                  onClick={handleApprove}
-                  className="modern-button"
-                />
-              </div>
-            )}
 
             {selectedBooking.status === "approved" && (
               <div
