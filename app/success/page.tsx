@@ -1,11 +1,12 @@
 "use client";
 
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Card } from "primereact/card";
 import { Button } from "primereact/button";
 import Link from "next/link";
 
-export default function SuccessPage() {
+function SuccessContent() {
   const searchParams = useSearchParams();
   const sessionId = searchParams.get("session_id");
 
@@ -42,5 +43,32 @@ export default function SuccessPage() {
         </Link>
       </Card>
     </div>
+  );
+}
+
+export default function SuccessPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex flex-column align-items-center justify-content-center min-h-screen surface-ground p-4">
+          <Card
+            className="text-center shadow-4 p-4"
+            style={{ maxWidth: "500px" }}
+          >
+            <div className="flex justify-content-center mb-4">
+              <div
+                className="flex align-items-center justify-content-center bg-green-100 border-circle"
+                style={{ width: "80px", height: "80px" }}
+              >
+                <i className="pi pi-spin pi-spinner text-green-500 text-4xl"></i>
+              </div>
+            </div>
+            <h1 className="text-3xl font-bold mb-2 text-900">Loading...</h1>
+          </Card>
+        </div>
+      }
+    >
+      <SuccessContent />
+    </Suspense>
   );
 }
