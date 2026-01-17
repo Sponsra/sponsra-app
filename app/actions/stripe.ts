@@ -31,10 +31,11 @@ export async function createCheckoutSession(bookingId: string) {
     );
   }
 
-  const { price, tier_name, stripe_account_id } = data as {
+  const { price, tier_name, stripe_account_id, newsletter_slug } = data as {
     price: number;
     tier_name: string;
     stripe_account_id: string;
+    newsletter_slug: string;
   };
 
   if (!stripe_account_id)
@@ -60,8 +61,8 @@ export async function createCheckoutSession(bookingId: string) {
       transfer_data: { destination: stripe_account_id },
     },
     metadata: { booking_id: bookingId },
-    success_url: `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${baseUrl}/`,
+    success_url: `${baseUrl}/${newsletter_slug}/ad?success=true&session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${baseUrl}/${newsletter_slug}/ad`,
   });
 
   // CHANGE: Return the URL object instead of redirecting

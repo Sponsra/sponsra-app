@@ -234,6 +234,12 @@ Ideas:
 
 - Opengraph image for what the sponsra.link will look like when a user pastes it into a text or eail or somewhere it will render.
 
+- Referral program if you share sponsra and the person from your unique sponsra referral link signs up, you get $$ Can we do this with magic links?
+
+- Media kit integration
+
+- An embeddable "Book Now" button they can put directly inside their Beehiiv/Substack posts.
+
 How we will work:
 I will provide the code for one specific step (e.g., Step 1.2).
 You will implement it and run the Validation Check.

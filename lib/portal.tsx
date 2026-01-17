@@ -19,7 +19,9 @@ export async function getNewsletterBySlug(slug: string) {
   // Using .select() with explicit columns ensures RLS policies are respected
   const { data: tiers, error: tiersError } = await supabase
     .from("inventory_tiers")
-    .select("id, name, price, type, description, is_active, specs_headline_limit, specs_body_limit, specs_image_ratio")
+    .select(
+      "id, name, price, type, description, is_active, specs_headline_limit, specs_body_limit, specs_image_ratio"
+    )
     .eq("newsletter_id", newsletter.id)
     .eq("is_active", true) // Only fetch active tiers
     .order("price", { ascending: true });

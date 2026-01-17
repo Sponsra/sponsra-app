@@ -1,8 +1,8 @@
 import { getNewsletterBySlug } from "@/lib/portal";
 import { notFound } from "next/navigation";
-import { Card } from "primereact/card";
-import BookingForm from "./BookingForm";
+import BookingWizard from "./BookingWizard";
 import { InventoryTierPublic, NewsletterTheme } from "@/app/types/inventory";
+import styles from "./page.module.css";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -25,14 +25,8 @@ export default async function AdBookingPage({ params }: PageProps) {
   };
 
   return (
-    <div
-      className="min-h-screen surface-ground"
-      style={{
-        minHeight: "100vh",
-        backgroundColor: "var(--surface-ground)",
-      }}
-    >
-      <BookingForm
+    <div className={styles.container}>
+      <BookingWizard
         tiers={adTiers}
         newsletterName={newsletter.name}
         slug={slug}

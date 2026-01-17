@@ -1,0 +1,19 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.label {
+  font-weight: 700;
+  color: var(--text-color);
+}
+
+.helpText {
+  color: var(--text-color-secondary);
+  font-size: 0.875rem;
+}
+
+.progressBar {
+  height: 6px;
+}

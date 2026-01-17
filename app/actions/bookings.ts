@@ -131,15 +131,18 @@ export async function saveAdCreative(
     };
   }
 
-  // 4. Create Stripe Checkout Session
-  // This function (from stripe.ts) should look up the booking and generate the payment link
+  // Return success (no payment redirect)
+  return { success: true };
+}
+
+// Create Stripe checkout session for payment
+export async function createBookingCheckout(bookingId: string) {
   const checkoutResult = await createCheckoutSession(bookingId);
 
   if (!checkoutResult.url) {
     return { success: false, error: "Failed to initialize payment." };
   }
 
-  // 5. Return the Stripe URL so the client can redirect
   return { success: true, url: checkoutResult.url };
 }
 

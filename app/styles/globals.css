@@ -1,15 +1,308 @@
 /* app/globals.css */
 @import "primeicons/primeicons.css";
 
-/* We will load the theme via the <link> tag in layout, 
-   but we set defaults here to prevent flash of white */
+/* ============================================
+   PREMIUM UI TRANSFORMATION - DESIGN SYSTEM
+   ============================================ */
+
+/* Typography - Plus Jakarta Sans for body, IBM Plex Mono Light (300) for numbers */
+:root {
+  --font-body: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", "SF Mono", Monaco, "Cascadia Code",
+    "Roboto Mono", Consolas, "Courier New", monospace;
+}
+
+/* ============================================
+   UNIFIED THEME SYSTEM
+   Map custom variables to PrimeReact theme variables
+   This ensures all components (PrimeReact and custom) use the same theme
+   ============================================ */
+
+/* Custom Color Variables - Mapped to PrimeReact Theme Variables
+   These will automatically sync with PrimeReact's theme switching */
+:root {
+  /* Map our custom variables to PrimeReact's theme variables */
+  --color-bg-white: var(--surface-a, #ffffff);
+  --color-bg-off-white: var(--surface-b, #f9fafb);
+  --color-text-heading: var(--text-color, #111827);
+  --color-text-body: var(--text-color-secondary, #4b5563);
+  --color-primary: var(--primary-color, #4f46e5);
+  --color-border: var(--surface-border, #e5e7eb);
+
+  /* Success colors - using PrimeReact's green palette when available */
+  --color-success-bg: var(--green-50, #ecfdf5);
+  --color-success-text: var(--green-700, #047857);
+
+  /* Warning colors - using PrimeReact's yellow palette when available */
+  --color-warning-bg: var(--yellow-50, #fffbeb);
+  --color-warning-text: var(--yellow-700, #b45309);
+
+  /* Error colors - using PrimeReact's red palette when available */
+  --color-error-bg: var(--red-50, #fef2f2);
+  --color-error-text: var(--red-600, #dc2626);
+
+  /* Primary color RGB for rgba() usage - will need to be updated per theme */
+  --primary-color-rgb: 79, 70, 229;
+
+  /* Primary color scale - use PrimeReact's primary scale (already mapped to indigo) */
+  --primary-50: var(--primary-50, #eef2ff);
+  --primary-100: var(--primary-100, #e0e7ff);
+  --primary-200: var(--primary-200, #c7d2fe);
+  --primary-300: var(--primary-300, #a5b4fc);
+  --primary-400: var(--primary-400, #818cf8);
+  --primary-500: var(--primary-500, #6366f1);
+  --primary-600: var(--primary-600, #4f46e5);
+  --primary-700: var(--primary-700, #4338ca);
+  --primary-800: var(--primary-800, #3730a3);
+  --primary-900: var(--primary-900, #312e81);
+  --primary-950: var(--primary-950, #1e1b4b);
+}
+
+/* Design Tokens */
+:root {
+  --radius: var(--border-radius, 6px);
+  --input-height: 44px;
+  --shadow-sm: 0px 1px 2px rgba(0, 0, 0, 0.06), 0px 1px 3px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0px 2px 4px rgba(0, 0, 0, 0.06), 0px 4px 6px rgba(0, 0, 0, 0.1);
+  --focus-ring: var(
+    --focus-ring,
+    0 0 0 2px var(--surface-a),
+    0 0 0 4px var(--primary-color)
+  );
+  --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Base Typography */
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
-    Arial, sans-serif;
-  background-color: var(--surface-ground);
-  color: var(--text-color);
+  font-family: var(--font-body);
+  background-color: var(--surface-ground, var(--color-bg-off-white));
+  color: var(--text-color, var(--color-text-body));
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--color-text-heading);
+  font-family: var(--font-body);
+  font-weight: 700;
+}
+
+/* PrimeReact Global Overrides */
+.p-inputtext,
+.p-inputtextarea,
+.p-dropdown,
+.p-calendar .p-inputtext,
+.p-multiselect .p-multiselect-label {
+  height: var(--input-height);
+  border-radius: var(--radius);
+  border: 1px solid var(--color-border);
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  padding: 0 0.875rem;
+  transition: var(--transition);
+  box-shadow: none;
+}
+
+.p-inputtext:focus,
+.p-inputtextarea:focus,
+.p-dropdown:not(.p-disabled).p-focus,
+.p-calendar:not(.p-disabled).p-focus .p-inputtext,
+.p-multiselect:not(.p-disabled).p-focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: var(--focus-ring);
+}
+
+.p-inputtext:hover:not(:disabled),
+.p-inputtextarea:hover:not(:disabled),
+.p-dropdown:hover:not(.p-disabled),
+.p-calendar:hover:not(.p-disabled) .p-inputtext {
+  border-color: var(--surface-300, #d1d5db);
+}
+
+.p-inputtextarea {
+  padding: 0.75rem 0.875rem;
+  min-height: var(--input-height);
+  resize: vertical;
+}
+
+/* Buttons */
+.p-button {
+  border-radius: var(--radius);
+  font-family: var(--font-body);
+  font-weight: 600;
+  padding: 0.625rem 1.25rem;
+  transition: var(--transition);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid transparent;
+}
+
+.p-button:not(.p-disabled):active {
+  transform: scale(0.98);
+}
+
+.p-button:not(.p-disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.p-button.p-button-text,
+.p-button.p-button-outlined {
+  box-shadow: none;
+}
+
+.p-button.p-button-text:not(.p-disabled):hover {
+  transform: none;
+  opacity: 0.8;
+}
+
+/* Cards & Panels */
+.p-card {
+  border-radius: var(--radius);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+  background: var(--color-bg-white);
+}
+
+.p-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--surface-300, #d1d5db);
+}
+
+/* Dialogs/Modals */
+.p-dialog {
+  border-radius: var(--radius);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-md);
+  animation: dialogFadeIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes dialogFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.p-dialog-header {
+  border-bottom: 1px solid var(--color-border);
+  padding: 1.5rem;
+}
+
+.p-dialog-content {
+  padding: 1.5rem;
+}
+
+.p-dialog-footer {
+  border-top: 1px solid var(--color-border);
+  padding: 1.5rem;
+}
+
+/* Tags/Badges - Subtle Wash Technique */
+.p-tag {
+  border-radius: var(--radius);
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.75rem;
+  padding: 0.375rem 0.75rem;
+  border: 1px solid;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.p-tag.p-tag-success {
+  background: var(--color-success-bg);
+  color: var(--color-success-text);
+  border-color: rgba(4, 120, 87, 0.2);
+}
+
+.p-tag.p-tag-warning {
+  background: var(--color-warning-bg);
+  color: var(--color-warning-text);
+  border-color: rgba(180, 83, 9, 0.2);
+}
+
+.p-tag.p-tag-danger {
+  background: var(--color-error-bg);
+  color: var(--color-error-text);
+  border-color: rgba(220, 38, 38, 0.2);
+}
+
+.p-tag.p-tag-secondary {
+  background: var(--surface-100, #f3f4f6);
+  color: var(--text-color-secondary, #6b7280);
+  border-color: var(--surface-200, #e5e7eb);
+}
+
+/* DataTable - Premium Table Styling */
+.p-datatable {
+  border-radius: var(--radius);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+  background: var(--color-bg-white);
+}
+
+.p-datatable .p-datatable-header {
+  background: var(--color-bg-off-white);
+  border: none;
+  border-bottom: 1px solid var(--color-border);
+  padding: 1.25rem 1.5rem;
+}
+
+.p-datatable .p-datatable-thead > tr > th {
+  background: var(--color-bg-off-white);
+  border: none;
+  border-bottom: 1px solid var(--color-border);
+  padding: 1.5rem 1.5rem;
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-body);
+  font-family: var(--font-body);
+}
+
+.p-datatable .p-datatable-tbody > tr {
+  transition: var(--transition);
+  border-bottom: 1px solid var(--color-border);
+  cursor: pointer;
+}
+
+.p-datatable .p-datatable-tbody > tr:last-child {
+  border-bottom: none;
+}
+
+.p-datatable .p-datatable-tbody > tr:hover {
+  background: var(--surface-hover, rgba(var(--primary-color-rgb), 0.04));
+}
+
+.p-datatable .p-datatable-tbody > tr > td {
+  border: none;
+  padding: 1.5rem 1.5rem;
+  background: transparent;
+  font-family: var(--font-body);
+}
+
+.p-datatable .p-paginator {
+  background: var(--color-bg-off-white);
+  border: none;
+  border-top: 1px solid var(--color-border);
+  padding: 1rem 1.5rem;
+}
+
+/* We will load the theme via the <link> tag in layout, 
+   but we set defaults here to prevent flash of white */
 
 /* Modern Dashboard Sidebar */
 .dashboard-sidebar {
@@ -17,17 +310,13 @@ body {
   left: 0;
   top: 0;
   height: 100vh;
-  width: 260px;
-  background: linear-gradient(
-    180deg,
-    var(--surface-0) 0%,
-    var(--surface-50) 100%
-  );
-  border-right: 1px solid var(--surface-border);
+  width: 250px;
+  background: var(--color-bg-white);
+  border-right: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
   z-index: 100;
-  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.04);
+  box-shadow: var(--shadow-sm);
 }
 
 @media (max-width: 768px) {
@@ -48,7 +337,7 @@ body {
 
 .sidebar-header {
   padding: 1.5rem 1.25rem;
-  border-bottom: 1px solid var(--surface-border);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .sidebar-logo {
@@ -57,7 +346,8 @@ body {
   gap: 0.75rem;
   font-weight: 700;
   font-size: 1.25rem;
-  color: var(--text-color);
+  color: var(--color-text-heading);
+  font-family: var(--font-body);
 }
 
 .logo-text {
@@ -84,10 +374,10 @@ body {
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem 1rem;
-  border-radius: 8px;
-  color: var(--text-color-secondary);
+  /* border-radius: var(--radius); */
+  color: var(--color-text-body);
   text-decoration: none;
-  transition: all 0.2s ease;
+  transition: var(--transition);
   font-weight: 500;
   font-size: 0.9375rem;
   border: none;
@@ -95,26 +385,24 @@ body {
   cursor: pointer;
   width: 100%;
   text-align: left;
+  font-family: var(--font-body);
 }
 
 .nav-item:hover {
-  background: var(--surface-100);
-  color: var(--text-color);
+  background: var(--color-bg-off-white);
+  color: var(--color-text-heading);
   transform: translateX(2px);
 }
 
 .nav-item.active {
-  background: linear-gradient(
-    135deg,
-    var(--primary-color) 0%,
-    var(--primary-600) 100%
-  );
-  color: white;
-  box-shadow: 0 2px 8px rgba(var(--primary-color-rgb), 0.3);
+  background: var(--color-bg-off-white);
+  color: var(--color-primary);
+  border-left: 3px solid var(--color-primary);
+  font-weight: 600;
 }
 
 .nav-item.active i {
-  color: white;
+  color: var(--color-primary);
 }
 
 .nav-item i {
@@ -125,16 +413,16 @@ body {
 
 .sidebar-footer {
   padding: 1rem 0.75rem;
-  border-top: 1px solid var(--surface-border);
+  border-top: 1px solid var(--color-border);
 }
 
 .sign-out {
-  color: #ef4444;
+  color: var(--red-500, #ef4444);
 }
 
 .sign-out:hover {
-  background: rgba(239, 68, 68, 0.1);
-  color: #dc2626;
+  background: var(--red-50, rgba(239, 68, 68, 0.1));
+  color: var(--red-600, #dc2626);
 }
 
 /* Dashboard Layout */
@@ -144,32 +432,27 @@ body {
 }
 
 .dashboard-content {
-  margin-left: 260px;
+  margin-left: 250px;
   flex: 1;
   padding: 2rem;
-  background: var(--surface-ground);
+  background: var(--color-bg-off-white);
 }
 
 /* Modern Card Styling */
 .modern-card {
-  background: var(--surface-0);
-  border-radius: 12px;
-  border: 1px solid var(--surface-border);
+  background: var(--color-bg-white);
+  border-radius: var(--radius);
+  border: 1px solid var(--color-border);
   padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  transition: all 0.2s ease;
-}
-
-.modern-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-sm);
 }
 
 .stat-card {
-  background: var(--surface-0);
-  border-radius: 12px;
-  border: 1px solid var(--surface-border);
+  background: var(--color-bg-white);
+  border-radius: var(--radius);
+  border: 1px solid var(--color-border);
   padding: 1.5rem;
-  transition: all 0.2s ease;
+  transition: var(--transition);
   position: relative;
   overflow: hidden;
 }
@@ -181,75 +464,75 @@ body {
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(
-    90deg,
-    var(--primary-color) 0%,
-    var(--primary-600) 100%
-  );
+  background: var(--color-primary);
 }
 
 .stat-card:hover {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-md);
   transform: translateY(-2px);
-  border-color: var(--primary-color);
-  opacity: 0.9;
+  border-color: var(--color-primary);
 }
 
 .stat-card-title {
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   font-weight: 600;
-  color: var(--text-color-secondary);
+  color: var(--color-text-body);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.05em;
   margin-bottom: 0.5rem;
+  font-family: var(--font-body);
 }
 
 .stat-card-subtitle {
   font-size: 0.75rem;
-  color: var(--text-color-secondary);
+  color: var(--color-text-body);
   margin-bottom: 1rem;
+  font-family: var(--font-body);
 }
 
 .stat-card-value {
   font-size: 2rem;
-  font-weight: 700;
-  color: var(--text-color);
+  font-weight: 300;
+  color: var(--color-text-heading);
   margin: 0;
+  font-family: var(--font-mono);
 }
 
 /* Modern Table Styling */
 .modern-table {
-  background: var(--surface-0);
-  border-radius: 12px;
+  background: var(--color-bg-white);
+  border-radius: var(--radius);
   overflow: hidden;
-  border: 1px solid var(--surface-border);
+  border: 1px solid var(--color-border);
 }
 
 .modern-table .p-datatable-header {
-  background: var(--surface-50);
+  background: var(--color-bg-off-white);
   border: none;
   padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid var(--surface-border);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .modern-table .p-datatable-thead > tr > th {
-  background: var(--surface-50);
+  background: var(--color-bg-off-white);
   border: none;
-  padding: 1rem 1.5rem;
+  padding: 1.5rem 1.5rem;
   font-weight: 600;
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--text-color-secondary);
+  letter-spacing: 0.05em;
+  color: var(--color-text-body);
+  font-family: var(--font-body);
 }
 
 .modern-table .p-datatable-tbody > tr {
-  transition: all 0.15s ease;
-  border-bottom: 1px solid var(--surface-100);
+  transition: var(--transition);
+  border-bottom: 1px solid var(--color-border);
+  cursor: pointer;
 }
 
 .modern-table .p-datatable-tbody > tr:hover {
-  background: rgba(var(--primary-color-rgb), 0.05);
+  background: var(--surface-hover, rgba(var(--primary-color-rgb), 0.04));
 }
 
 .modern-table .p-datatable-tbody > tr:last-child {
@@ -258,56 +541,57 @@ body {
 
 .modern-table .p-datatable-tbody > tr > td {
   border: none;
-  padding: 1.25rem 1.5rem;
+  padding: 1.5rem 1.5rem;
   background: transparent;
+  font-family: var(--font-body);
 }
 
 .modern-table .p-paginator {
-  background: var(--surface-50);
+  background: var(--color-bg-off-white);
   border: none;
-  border-top: 1px solid var(--surface-border);
+  border-top: 1px solid var(--color-border);
   padding: 1rem 1.5rem;
 }
 
 /* Modern Button Styles */
 .modern-button {
-  border-radius: 8px;
+  border-radius: var(--radius);
   font-weight: 600;
   padding: 0.625rem 1.25rem;
-  transition: all 0.2s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: var(--transition);
+  box-shadow: var(--shadow-sm);
+  font-family: var(--font-body);
+}
+
+.modern-button:not(.p-disabled):active {
+  transform: scale(0.98);
 }
 
 .modern-button:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-md);
 }
 
 /* Dashboard Header */
 .dashboard-header {
   margin-bottom: 2rem;
   padding-bottom: 1.5rem;
-  border-bottom: 1px solid var(--surface-border);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .dashboard-header h1 {
   font-size: 2rem;
   font-weight: 700;
   margin: 0 0 0.5rem 0;
-  background: linear-gradient(
-    135deg,
-    var(--text-color) 0%,
-    var(--text-color-secondary) 100%
-  );
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--color-text-heading);
+  font-family: var(--font-body);
 }
 
 .dashboard-header-subtitle {
-  color: var(--text-color-secondary);
+  color: var(--color-text-body);
   font-size: 0.9375rem;
   margin: 0;
+  font-family: var(--font-body);
 }
 
 /* Stats Grid */
@@ -320,30 +604,28 @@ body {
 
 /* Alert Banner */
 .modern-alert {
-  border-radius: 12px;
-  border: 1px solid rgba(251, 146, 60, 0.3);
-  background: linear-gradient(
-    135deg,
-    rgba(255, 237, 213, 0.8) 0%,
-    rgba(254, 215, 170, 0.8) 100%
-  );
+  border-radius: var(--radius);
+  border: 1px solid rgba(180, 83, 9, 0.2);
+  background: var(--color-warning-bg);
   padding: 1.25rem 1.5rem;
   margin-bottom: 2rem;
-  box-shadow: 0 2px 8px rgba(255, 152, 0, 0.1);
+  box-shadow: var(--shadow-sm);
+  font-family: var(--font-body);
 }
 
 /* Empty State */
 .empty-state {
   text-align: center;
   padding: 3rem 2rem;
-  background: var(--surface-50);
-  border-radius: 12px;
-  border: 2px dashed var(--surface-border);
+  background: var(--color-bg-off-white);
+  border-radius: var(--radius);
+  border: 2px dashed var(--color-border);
+  font-family: var(--font-body);
 }
 
 .empty-state i {
   font-size: 3rem;
-  color: var(--text-color-secondary);
+  color: var(--color-text-body);
   margin-bottom: 1rem;
   opacity: 0.5;
 }
@@ -351,11 +633,13 @@ body {
 .empty-state h3 {
   font-size: 1.25rem;
   font-weight: 600;
-  color: var(--text-color);
+  color: var(--color-text-heading);
   margin: 0 0 0.5rem 0;
+  font-family: var(--font-body);
 }
 
 .empty-state p {
-  color: var(--text-color-secondary);
+  color: var(--color-text-body);
   margin: 0;
+  font-family: var(--font-body);
 }

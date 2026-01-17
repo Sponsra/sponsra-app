@@ -1,4 +1,4 @@
--- Add the get_checkout_data function for Stripe checkout session creation
+-- Update get_checkout_data to include newsletter_slug for redirect URL
 create or replace function get_checkout_data(p_booking_id uuid)
 returns json
 language plpgsql

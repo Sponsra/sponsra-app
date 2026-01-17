@@ -1,0 +1,71 @@
+.dialog {
+  /* Dialog styling is handled by globals.css, but we can add custom overrides here if needed */
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.description {
+  margin: 0;
+  color: var(--color-text-body);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  font-family: var(--font-body);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.label {
+  font-weight: 600;
+  font-size: 0.9375rem;
+  color: var(--color-text-heading);
+  font-family: var(--font-body);
+}
+
+.labelOptional {
+  font-weight: 400;
+  color: var(--color-text-body);
+  font-size: 0.875rem;
+  margin-left: 0.25rem;
+}
+
+.linkSection {
+  background: var(--color-bg-off-white);
+  padding: 1.25rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--color-border);
+}
+
+.linkLabel {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-body);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.75rem;
+  font-family: var(--font-body);
+}
+
+.linkContainer {
+  display: flex;
+  gap: 0.75rem;
+  align-items: stretch;
+}
+
+.linkInput {
+  flex: 1;
+  font-size: 0.875rem !important;
+  font-family: var(--font-mono) !important;
+  font-weight: 300 !important;
+}
+
+.copyButton {
+  flex-shrink: 0;
+}

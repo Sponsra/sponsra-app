@@ -15,6 +15,7 @@ export interface BookingInventoryTier {
 
 export interface Booking {
   id: string;
+  created_at?: string | null;
   target_date: string;
   status: BookingStatus;
   ad_headline: string | null;

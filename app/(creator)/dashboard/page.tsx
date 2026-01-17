@@ -1,9 +1,11 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { Button } from "primereact/button";
-import BookingsTable from "./BookingsTable";
 import Sidebar from "./Sidebar";
 import DashboardHeader from "./DashboardHeader";
+import PulseCards from "./PulseCards";
+import RequiresAttention from "./RequiresAttention";
+import UpNext from "./UpNext";
 import {
   createStripeConnectAccount,
   getStripeStatus,
@@ -29,7 +31,7 @@ export default async function Dashboard() {
         id, name, slug, theme_config,
         inventory_tiers(*),
         bookings(
-            id, target_date, status, ad_headline, ad_body, ad_link, sponsor_name, ad_image_path,
+            id, created_at, target_date, status, ad_headline, ad_body, ad_link, sponsor_name, ad_image_path,
             inventory_tiers(price, name)
         )
     `
@@ -41,15 +43,7 @@ export default async function Dashboard() {
   const isStripeConnected = await getStripeStatus();
 
   const tiers: InventoryTier[] = newsletter?.inventory_tiers || [];
-
-  // 4. Calculate Stats
   const bookings: Booking[] = newsletter?.bookings || [];
-  const recentBookings = [...bookings]
-    .sort(
-      (a, b) =>
-        new Date(b.target_date).getTime() - new Date(a.target_date).getTime()
-    )
-    .slice(0, 5);
 
   const theme: NewsletterTheme = {
     primary_color: newsletter?.theme_config?.primary_color || "#3b82f6",
@@ -57,26 +51,110 @@ export default async function Dashboard() {
     layout_style: newsletter?.theme_config?.layout_style || "minimal",
   };
 
-  const pendingCount = bookings.filter(
-    (b) => b.status === "draft" || b.status === "pending_payment"
-  ).length;
+  // Date helpers
+  const now = new Date();
+  const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const currentMonthEnd = new Date(
+    now.getFullYear(),
+    now.getMonth() + 1,
+    0,
+    23,
+    59,
+    59
+  );
+  const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const lastMonthEnd = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    0,
+    23,
+    59,
+    59
+  );
+  const next30DaysEnd = new Date(now);
+  next30DaysEnd.setDate(next30DaysEnd.getDate() + 30);
+  const twoDaysAgo = new Date(now);
+  twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
 
-  const revenueCents = bookings
-    .filter((b) => b.status === "paid" || b.status === "approved")
-    .reduce((sum, b) => {
-      const tier = Array.isArray(b.inventory_tiers)
-        ? b.inventory_tiers[0]
-        : b.inventory_tiers;
-      return sum + (tier?.price || 0);
-    }, 0);
-
-  // Helper for top-level currency display
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(value / 100);
+  // Helper to get tier price
+  const getTierPrice = (booking: Booking) => {
+    const tier = Array.isArray(booking.inventory_tiers)
+      ? booking.inventory_tiers[0]
+      : booking.inventory_tiers;
+    return tier?.price || 0;
   };
+
+  // 1. Revenue This Month
+  const revenueThisMonth = bookings
+    .filter((b) => {
+      if (b.status !== "paid" && b.status !== "approved") return false;
+      if (!b.created_at) return false;
+      const createdDate = new Date(b.created_at);
+      return createdDate >= currentMonthStart && createdDate <= currentMonthEnd;
+    })
+    .reduce((sum, b) => sum + getTierPrice(b), 0);
+
+  // 2. Revenue Last Month
+  const revenueLastMonth = bookings
+    .filter((b) => {
+      if (b.status !== "paid" && b.status !== "approved") return false;
+      if (!b.created_at) return false;
+      const createdDate = new Date(b.created_at);
+      return createdDate >= lastMonthStart && createdDate <= lastMonthEnd;
+    })
+    .reduce((sum, b) => sum + getTierPrice(b), 0);
+
+  // 3. Pipeline Count (status = 'paid')
+  const pipelineCount = bookings.filter((b) => b.status === "paid").length;
+
+  // 4. Occupancy Data (Next 30 Days)
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const next30Days = new Date(today);
+  next30Days.setDate(next30Days.getDate() + 30);
+
+  const bookingsInNext30Days = bookings.filter((b) => {
+    if (b.status !== "approved") return false;
+    const targetDate = new Date(b.target_date);
+    targetDate.setHours(0, 0, 0, 0);
+    return targetDate >= today && targetDate <= next30Days;
+  });
+
+  // Calculate total available slots from active inventory tiers
+  // For simplicity, we'll assume each tier can have one slot per day
+  // In a more complex system, you'd track max slots per tier
+  const activeTiers = tiers.filter((t) => t.is_active);
+  const totalSlots = activeTiers.length * 30; // 30 days * number of active tiers
+  const filledSlots = bookingsInNext30Days.length;
+  const occupancyPercentage =
+    totalSlots > 0 ? (filledSlots / totalSlots) * 100 : 0;
+
+  // 5. Requires Attention
+  const requiresAttention = bookings.filter((b) => {
+    // Status = 'paid' (needs review)
+    if (b.status === "paid") return true;
+    // Status = 'draft' AND created_at < 2 days ago (stale drafts)
+    if (b.status === "draft" && b.created_at) {
+      const createdDate = new Date(b.created_at);
+      return createdDate < twoDaysAgo;
+    }
+    return false;
+  });
+
+  // 6. Up Next (Next 3 approved bookings)
+  const upNext = bookings
+    .filter((b) => {
+      if (b.status !== "approved") return false;
+      const targetDate = new Date(b.target_date);
+      targetDate.setHours(0, 0, 0, 0);
+      return targetDate >= today;
+    })
+    .sort((a, b) => {
+      const dateA = new Date(a.target_date).getTime();
+      const dateB = new Date(b.target_date).getTime();
+      return dateA - dateB;
+    })
+    .slice(0, 3);
 
   return (
     <div className="dashboard-layout">
@@ -124,70 +202,25 @@ export default async function Dashboard() {
           tiers={tiers}
         />
 
-        {/* STATS ROW */}
-        <div className="stats-grid">
-          <div className="stat-card">
-            <div className="stat-card-title">Revenue</div>
-            <div className="stat-card-subtitle">All Time</div>
-            <div
-              className="stat-card-value"
-              style={{ color: "var(--primary-color)" }}
-            >
-              {formatCurrency(revenueCents)}
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-card-title">Needs Review</div>
-            <div className="stat-card-subtitle">Pending Actions</div>
-            <div
-              className="stat-card-value"
-              style={{
-                color: pendingCount > 0 ? "#ea580c" : "var(--text-color)",
-              }}
-            >
-              {pendingCount}
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-card-title">Total Bookings</div>
-            <div className="stat-card-subtitle">All Statuses</div>
-            <div className="stat-card-value">{bookings.length}</div>
-          </div>
+        {/* Row 1: The Pulse */}
+        <PulseCards
+          revenueThisMonth={revenueThisMonth}
+          revenueLastMonth={revenueLastMonth}
+          pipelineCount={pipelineCount}
+          occupancyData={{
+            filled: filledSlots,
+            total: totalSlots,
+            percentage: occupancyPercentage,
+          }}
+        />
+
+        {/* Row 2: Requires Attention */}
+        <div style={{ marginBottom: "2rem" }}>
+          <RequiresAttention bookings={requiresAttention} theme={theme} />
         </div>
 
-        {/* RECENT BOOKINGS TABLE */}
-        <div className="modern-card">
-          <div style={{ marginBottom: "1.5rem" }}>
-            <h2
-              style={{
-                margin: 0,
-                fontSize: "1.25rem",
-                fontWeight: 700,
-                color: "var(--text-color)",
-              }}
-            >
-              Recent Orders
-            </h2>
-            <p
-              style={{
-                margin: "0.25rem 0 0 0",
-                fontSize: "0.875rem",
-                color: "var(--text-color-secondary)",
-              }}
-            >
-              Manage and review your sponsorship bookings
-            </p>
-          </div>
-          {recentBookings.length === 0 ? (
-            <div className="empty-state">
-              <i className="pi pi-inbox"></i>
-              <h3>No bookings yet</h3>
-              <p>Share your link to get your first sponsor!</p>
-            </div>
-          ) : (
-            <BookingsTable bookings={recentBookings} theme={theme} />
-          )}
-        </div>
+        {/* Row 3: Up Next */}
+        <UpNext bookings={upNext} />
       </div>
     </div>
   );

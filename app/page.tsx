@@ -5,7 +5,7 @@ import { Card } from "primereact/card";
 import { ThemeContext } from "@/lib/ThemeContext";
 
 export default function Home() {
-  const { isDark, themeColor, toggleTheme } = useContext(ThemeContext);
+  const { isDark, toggleTheme } = useContext(ThemeContext);
 
   return (
     <div
@@ -25,8 +25,7 @@ export default function Home() {
         style={{ width: "25rem" }}
       >
         <p className="m-0" style={{ marginBottom: "2rem", lineHeight: "1.6" }}>
-          Current Vibe: <strong>{isDark ? "Dark Mode" : "Light Mode"}</strong> •{" "}
-          <strong>{themeColor}</strong>
+          Current Vibe: <strong>{isDark ? "Dark Mode" : "Light Mode"}</strong>
         </p>
 
         <div style={{ display: "flex", gap: "1rem" }}>

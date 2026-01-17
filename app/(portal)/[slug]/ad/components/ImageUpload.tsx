@@ -5,6 +5,7 @@ import { FileUpload, FileUploadSelectEvent } from "primereact/fileupload";
 import { ProgressBar } from "primereact/progressbar";
 import { Message } from "primereact/message";
 import { createClient } from "@/utils/supabase/client";
+import styles from "./ImageUpload.module.css";
 
 interface ImageUploadProps {
   onUploadComplete: (path: string) => void;
@@ -24,22 +25,28 @@ export default function ImageUpload({
   const supabase = createClient();
 
   // Helper to check aspect ratio
-  const checkAspectRatio = (width: number, height: number, required: string): boolean => {
+  const checkAspectRatio = (
+    width: number,
+    height: number,
+    required: string
+  ): boolean => {
     if (required === "any" || required === "no_image") return true;
-    
+
     const actualRatio = width / height;
-    
+
     if (required === "1:1") {
       // Allow some tolerance for 1:1 (0.95 to 1.05)
       return actualRatio >= 0.95 && actualRatio <= 1.05;
     }
-    
+
     if (required === "1.91:1") {
       // Allow some tolerance for 1.91:1 (1.85 to 1.97)
       const targetRatio = 1.91;
-      return actualRatio >= targetRatio * 0.97 && actualRatio <= targetRatio * 1.03;
+      return (
+        actualRatio >= targetRatio * 0.97 && actualRatio <= targetRatio * 1.03
+      );
     }
-    
+
     return true;
   };
 
@@ -61,17 +68,26 @@ export default function ImageUpload({
       try {
         const img = new Image();
         const objectUrl = URL.createObjectURL(file);
-        
+
         await new Promise<void>((resolve, reject) => {
           img.onload = () => {
-            const isValid = checkAspectRatio(img.width, img.height, requiredAspectRatio);
+            const isValid = checkAspectRatio(
+              img.width,
+              img.height,
+              requiredAspectRatio
+            );
             URL.revokeObjectURL(objectUrl);
-            
+
             if (!isValid) {
-              const ratioLabel = requiredAspectRatio === "1:1" ? "Square (1:1)" : "Landscape (1.91:1)";
+              const ratioLabel =
+                requiredAspectRatio === "1:1"
+                  ? "Square (1:1)"
+                  : "Landscape (1.91:1)";
               setError(
                 `Image aspect ratio doesn't match requirement. Required: ${ratioLabel}. ` +
-                `Your image: ${img.width}x${img.height} (${(img.width / img.height).toFixed(2)}:1)`
+                  `Your image: ${img.width}x${img.height} (${(
+                    img.width / img.height
+                  ).toFixed(2)}:1)`
               );
               reject(new Error("Invalid aspect ratio"));
             } else {
@@ -122,8 +138,8 @@ export default function ImageUpload({
   };
 
   return (
-    <div className="flex flex-column gap-2">
-      <label className="font-bold text-slate-700">Ad Image (Optional)</label>
+    <div className={styles.container}>
+      <label className={styles.label}>Ad Image (Optional)</label>
 
       <FileUpload
         mode="basic"
@@ -138,7 +154,7 @@ export default function ImageUpload({
       />
 
       {uploading && (
-        <ProgressBar mode="indeterminate" style={{ height: "6px" }} />
+        <ProgressBar mode="indeterminate" className={styles.progressBar} />
       )}
 
       {error && <Message severity="error" text={error} />}
@@ -147,7 +163,7 @@ export default function ImageUpload({
         <Message severity="success" text="Image uploaded successfully!" />
       )}
 
-      <small className="text-slate-500">
+      <small className={styles.helpText}>
         Supported formats: JPG, PNG, GIF. Max size: 2MB.
       </small>
     </div>

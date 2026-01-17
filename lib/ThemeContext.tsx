@@ -1,66 +1,66 @@
 "use client";
 import React, { createContext, useState, useEffect } from "react";
-
-// Available Lara theme colors according to PrimeReact documentation
-// https://primereact.org/theming/
-export type ThemeColor =
-  | "indigo"
-  | "blue"
-  | "purple"
-  | "teal"
-  | "amber"
-  | "cyan"
-  | "pink";
+import { usePathname } from "next/navigation";
 
 export interface ThemeContextType {
   isDark: boolean;
-  themeColor: ThemeColor;
   toggleTheme: () => void;
-  setThemeColor: (color: ThemeColor) => void;
 }
 
 export const ThemeContext = createContext<ThemeContextType>({
   isDark: false,
-  themeColor: "indigo",
   toggleTheme: () => {},
-  setThemeColor: () => {},
 });
 
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   const [isDark, setIsDark] = useState(false);
-  const [themeColor, setThemeColorState] = useState<ThemeColor>("indigo");
   const [mounted, setMounted] = useState(false);
+  const pathname = usePathname();
 
-  // Load theme preferences from localStorage on mount
-  useEffect(() => {
-    setMounted(true);
-    const savedIsDark = localStorage.getItem("theme-dark") === "true";
-    const savedColor = (localStorage.getItem("theme-color") ||
-      "indigo") as ThemeColor;
-    setIsDark(savedIsDark);
-    setThemeColorState(savedColor);
-    updateTheme(savedIsDark, savedColor);
-  }, []);
+  // Check if we're on a portal route (booking pages)
+  const isPortalRoute = pathname?.includes("/ad") || false;
 
-  const updateTheme = (dark: boolean, color: ThemeColor) => {
+  // Always use indigo theme color (electric indigo #4F46E5)
+  const themeColor = "indigo";
+
+  const updateTheme = (dark: boolean) => {
+    // Don't update theme for portal routes
+    if (isPortalRoute) {
+      return;
+    }
+    // Switch PrimeReact theme CSS file - this updates all PrimeReact variables
+    // Our custom variables are mapped to PrimeReact variables, so they update automatically
     const themeLink = document.getElementById("app-theme") as HTMLLinkElement;
     if (themeLink) {
-      const themeName = dark ? `lara-dark-${color}` : `lara-light-${color}`;
+      const themeName = dark
+        ? `lara-dark-${themeColor}`
+        : `lara-light-${themeColor}`;
       themeLink.href = `/themes/${themeName}/theme.css`;
     }
   };
 
+  // Load theme preferences from localStorage on mount
+  useEffect(() => {
+    setMounted(true);
+    // Skip theme loading for portal routes - they use fixed theme
+    if (isPortalRoute) {
+      return;
+    }
+    const savedIsDark = localStorage.getItem("theme-dark") === "true";
+    setIsDark(savedIsDark);
+    updateTheme(savedIsDark);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPortalRoute]);
+
   const toggleTheme = () => {
+    // Don't allow theme changes on portal routes
+    if (isPortalRoute) {
+      return;
+    }
     const newTheme = !isDark;
     setIsDark(newTheme);
     localStorage.setItem("theme-dark", String(newTheme));
-    updateTheme(newTheme, themeColor);
-  };
-
-  const setThemeColor = (color: ThemeColor) => {
-    setThemeColorState(color);
-    localStorage.setItem("theme-color", color);
-    updateTheme(isDark, color);
+    updateTheme(newTheme);
   };
 
   // Don't render until mounted to avoid hydration mismatch
@@ -69,9 +69,7 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   }
 
   return (
-    <ThemeContext.Provider
-      value={{ isDark, themeColor, toggleTheme, setThemeColor }}
-    >
+    <ThemeContext.Provider value={{ isDark, toggleTheme }}>
       {children}
     </ThemeContext.Provider>
   );

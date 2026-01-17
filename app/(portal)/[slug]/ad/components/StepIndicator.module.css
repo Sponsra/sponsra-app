@@ -1,0 +1,59 @@
+.container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.dot {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid var(--surface-border);
+  background: var(--surface-0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+  transition: all 0.2s ease;
+  padding: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-color-secondary);
+}
+
+.dot.clickable {
+  cursor: pointer;
+}
+
+.dot.clickable:hover {
+  background: var(--surface-50);
+  border-color: var(--primary-color);
+  transform: scale(1.1);
+}
+
+.dot.pending {
+  border-color: var(--surface-border);
+  background: var(--surface-0);
+}
+
+.dot.active {
+  border-color: var(--primary-color);
+  background: var(--primary-color);
+  color: white;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+.dot.completed {
+  border-color: var(--green-500);
+  background: var(--green-500);
+  color: white;
+}
+
+.dot.completed i {
+  font-size: 0.75rem;
+}
+
+.stepNumber {
+  display: block;
+}

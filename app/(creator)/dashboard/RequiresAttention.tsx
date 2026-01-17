@@ -1,13 +1,11 @@
 "use client";
 
-import { DataTable } from "primereact/datatable";
-import { Column } from "primereact/column";
-import { Tag } from "primereact/tag";
+import { useState } from "react";
 import { Button } from "primereact/button";
 import { Dialog } from "primereact/dialog";
 import { SplitButton } from "primereact/splitbutton";
 import { Toast } from "primereact/toast";
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import { useRouter } from "next/navigation";
 import { approveBooking, rejectBooking } from "@/app/actions/bookings";
 import {
@@ -17,24 +15,22 @@ import {
 } from "@/utils/supabase/ad-export";
 import type { NewsletterTheme } from "@/app/types/inventory";
 import type { Booking } from "@/app/types/booking";
+import EmptyState from "./EmptyState";
+import classes from "./RequiresAttention.module.css";
 
-interface BookingsTableProps {
+interface RequiresAttentionProps {
   bookings: Booking[];
   theme: NewsletterTheme;
 }
 
-export default function BookingsTable({ bookings, theme }: BookingsTableProps) {
+export default function RequiresAttention({
+  bookings,
+  theme,
+}: RequiresAttentionProps) {
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [loadingAction, setLoadingAction] = useState(false);
   const router = useRouter();
   const toast = useRef<Toast>(null);
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(value / 100);
-  };
 
   const formatDate = (dateString: string) => {
     if (!dateString) return "";
@@ -47,7 +43,6 @@ export default function BookingsTable({ bookings, theme }: BookingsTableProps) {
     });
   };
 
-  // Helper to build the image URL
   const getImageUrl = (path?: string | null) => {
     if (!path) return null;
     return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/ad-creatives/${path}`;
@@ -58,35 +53,6 @@ export default function BookingsTable({ bookings, theme }: BookingsTableProps) {
     return Array.isArray(booking.inventory_tiers)
       ? booking.inventory_tiers[0] || null
       : booking.inventory_tiers;
-  };
-
-  // COLUMN 1: PAYMENT STATUS
-  const paymentStatusTemplate = (rowData: Booking) => {
-    const isPaid = ["paid", "approved", "rejected"].includes(rowData.status);
-    if (isPaid) {
-      return <Tag value="PAID" severity="success" icon="pi pi-dollar" />;
-    }
-    return <Tag value="PENDING" severity="secondary" />;
-  };
-
-  // COLUMN 2: REVIEW STATUS
-  const reviewStatusTemplate = (rowData: Booking) => {
-    switch (rowData.status) {
-      case "paid":
-        return (
-          <Tag
-            value="NEEDS REVIEW"
-            severity="warning"
-            icon="pi pi-exclamation-circle"
-          />
-        );
-      case "approved":
-        return <Tag value="APPROVED" severity="success" icon="pi pi-check" />;
-      case "rejected":
-        return <Tag value="REJECTED" severity="danger" icon="pi pi-times" />;
-      default:
-        return <span className="text-500">-</span>;
-    }
   };
 
   const handleApprove = async () => {
@@ -169,6 +135,27 @@ export default function BookingsTable({ bookings, theme }: BookingsTableProps) {
     },
   ];
 
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "paid":
+        return (
+          <span className={classes.badgeWarning}>
+            <i className="pi pi-exclamation-circle"></i>
+            Needs Review
+          </span>
+        );
+      case "draft":
+        return (
+          <span className={classes.badgeSecondary}>
+            <i className="pi pi-clock"></i>
+            Stale Draft
+          </span>
+        );
+      default:
+        return null;
+    }
+  };
+
   const renderDialogFooter = () => {
     if (!selectedBooking) return null;
 
@@ -229,99 +216,93 @@ export default function BookingsTable({ bookings, theme }: BookingsTableProps) {
     );
   };
 
+  if (bookings.length === 0) {
+    return (
+      <div className="modern-card">
+        <div style={{ marginBottom: "1.5rem" }}>
+          <h2
+            style={{
+              margin: 0,
+              fontSize: "1.25rem",
+              fontWeight: 700,
+              color: "var(--color-text-heading)",
+            }}
+          >
+            Requires Attention
+          </h2>
+          <p
+            style={{
+              margin: "0.25rem 0 0 0",
+              fontSize: "0.875rem",
+              color: "var(--color-text-body)",
+            }}
+          >
+            Bookings that need your review or action
+          </p>
+        </div>
+        <EmptyState
+          icon="pi pi-check-circle"
+          title="All caught up! 🎉"
+          message="You have no bookings requiring attention right now."
+        />
+      </div>
+    );
+  }
+
   return (
     <>
       <Toast ref={toast} />
-      <DataTable
-        value={bookings}
-        sortField="target_date"
-        sortOrder={1}
-        paginator
-        rows={10}
-        className="modern-table"
-        selectionMode="single"
-        emptyMessage="No bookings found"
-        onRowClick={(e) => setSelectedBooking(e.data as Booking)}
-        rowClassName={() => "cursor-pointer"}
-      >
-        <Column
-          field="target_date"
-          header="Date"
-          sortable
-          body={(data: Booking) => (
-            <div style={{ fontWeight: 600, color: "var(--text-color)" }}>
-              {formatDate(data.target_date)}
+      <div className="modern-card">
+        <div style={{ marginBottom: "1.5rem" }}>
+          <h2
+            style={{
+              margin: 0,
+              fontSize: "1.25rem",
+              fontWeight: 700,
+              color: "var(--color-text-heading)",
+            }}
+          >
+            Requires Attention
+          </h2>
+          <p
+            style={{
+              margin: "0.25rem 0 0 0",
+              fontSize: "0.875rem",
+              color: "var(--color-text-body)",
+            }}
+          >
+            Bookings that need your review or action
+          </p>
+        </div>
+        <div className={classes.list}>
+          {bookings.map((booking) => (
+            <div key={booking.id} className={classes.listItem}>
+              <div className={classes.listItemContent}>
+                <div className={classes.listItemMain}>
+                  <div className={classes.listItemTitle}>
+                    {booking.sponsor_name || "Unknown Sponsor"}
+                  </div>
+                  <div className={classes.listItemMeta}>
+                    <span className={classes.listItemDate}>
+                      {formatDate(booking.target_date)}
+                    </span>
+                    {getStatusBadge(booking.status)}
+                  </div>
+                </div>
+                <Button
+                  label="Review"
+                  icon="pi pi-eye"
+                  size="small"
+                  onClick={() => setSelectedBooking(booking)}
+                  className="modern-button"
+                />
+              </div>
             </div>
-          )}
-          style={{ minWidth: "150px" }}
-        />
-        <Column
-          field="sponsor_name"
-          header="Sponsor"
-          body={(data: Booking) => (
-            <div
-              style={{
-                fontWeight: 600,
-                fontSize: "0.9375rem",
-                color: "var(--text-color)",
-              }}
-            >
-              {data.sponsor_name || "Unknown"}
-            </div>
-          )}
-          style={{ minWidth: "150px" }}
-        />
-        <Column
-          header="Payment"
-          body={paymentStatusTemplate}
-          style={{ minWidth: "120px" }}
-        />
-        <Column
-          header="Review Status"
-          body={reviewStatusTemplate}
-          style={{ minWidth: "140px" }}
-        />
-        <Column
-          field="inventory_tiers.price"
-          header="Value"
-          body={(data: Booking) => (
-            <div
-              style={{
-                fontWeight: 300,
-                color: "var(--color-primary)",
-                fontSize: "0.9375rem",
-                fontFamily: "var(--font-mono)",
-              }}
-            >
-              {formatCurrency(getInventoryTier(data)?.price || 0)}
-            </div>
-          )}
-          style={{ minWidth: "100px" }}
-        />
-        <Column
-          body={(rowData: Booking) => (
-            <Button
-              icon="pi pi-ellipsis-v"
-              rounded
-              text
-              aria-label="View Details"
-              onClick={(e) => {
-                e.stopPropagation();
-                setSelectedBooking(rowData);
-              }}
-              className="modern-button"
-              style={{
-                color: "var(--primary-color)",
-                padding: "0.5rem",
-              }}
-            />
-          )}
-          header=""
-          style={{ width: "80px", textAlign: "center" }}
-        />
-      </DataTable>
+          ))}
+        </div>
+      </div>
 
-      {/* REVIEW DIALOG */}
+      {/* REVIEW DIALOG - Reused from BookingsTable */}
       <Dialog
         header={
           <div
@@ -353,7 +334,6 @@ export default function BookingsTable({ bookings, theme }: BookingsTableProps) {
           <div
             style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}
           >
-            {/* --- NEW: IMAGE PREVIEW BLOCK --- */}
             {selectedBooking.ad_image_path && (
               <div
                 className="modern-card"
@@ -363,7 +343,7 @@ export default function BookingsTable({ bookings, theme }: BookingsTableProps) {
                   style={{
                     fontSize: "0.75rem",
                     fontWeight: 700,
-                    color: "var(--text-color-secondary)",
+                    color: "var(--color-text-body)",
                     textTransform: "uppercase",
                     letterSpacing: "0.5px",
                     marginBottom: "0.75rem",
@@ -403,7 +383,6 @@ export default function BookingsTable({ bookings, theme }: BookingsTableProps) {
                 </div>
               </div>
             )}
-            {/* --------------------------------- */}
 
             <div
               className="modern-card"
@@ -413,7 +392,7 @@ export default function BookingsTable({ bookings, theme }: BookingsTableProps) {
                 style={{
                   fontSize: "0.75rem",
                   fontWeight: 700,
-                  color: "var(--text-color-secondary)",
+                  color: "var(--color-text-body)",
                   textTransform: "uppercase",
                   letterSpacing: "0.5px",
                   marginBottom: "0.75rem",
@@ -432,7 +411,7 @@ export default function BookingsTable({ bookings, theme }: BookingsTableProps) {
                         (getInventoryTier(selectedBooking)
                           ?.specs_headline_limit || Infinity)
                           ? "var(--red-500)"
-                          : "var(--text-color-secondary)",
+                          : "var(--color-text-body)",
                     }}
                   >
                     {selectedBooking.ad_headline?.length || 0}/
@@ -450,7 +429,7 @@ export default function BookingsTable({ bookings, theme }: BookingsTableProps) {
                 style={{
                   fontWeight: 700,
                   fontSize: "1.25rem",
-                  color: "var(--text-color)",
+                  color: "var(--color-text-heading)",
                   lineHeight: "1.5",
                 }}
               >
@@ -487,7 +466,7 @@ export default function BookingsTable({ bookings, theme }: BookingsTableProps) {
                 style={{
                   fontSize: "0.75rem",
                   fontWeight: 700,
-                  color: "var(--text-color-secondary)",
+                  color: "var(--color-text-body)",
                   textTransform: "uppercase",
                   letterSpacing: "0.5px",
                   marginBottom: "0.75rem",
@@ -506,7 +485,7 @@ export default function BookingsTable({ bookings, theme }: BookingsTableProps) {
                         (getInventoryTier(selectedBooking)?.specs_body_limit ||
                           Infinity)
                           ? "var(--red-500)"
-                          : "var(--text-color-secondary)",
+                          : "var(--color-text-body)",
                     }}
                   >
                     {selectedBooking.ad_body?.length || 0}/
@@ -522,7 +501,7 @@ export default function BookingsTable({ bookings, theme }: BookingsTableProps) {
               <div
                 style={{
                   lineHeight: "1.75",
-                  color: "var(--text-color)",
+                  color: "var(--color-text-heading)",
                   whiteSpace: "pre-wrap",
                   maxHeight: "300px",
                   overflowY: "auto",
@@ -561,7 +540,7 @@ export default function BookingsTable({ bookings, theme }: BookingsTableProps) {
                 style={{
                   fontSize: "0.75rem",
                   fontWeight: 700,
-                  color: "var(--text-color-secondary)",
+                  color: "var(--color-text-body)",
                   textTransform: "uppercase",
                   letterSpacing: "0.5px",
                   marginBottom: "0.75rem",
@@ -590,7 +569,7 @@ export default function BookingsTable({ bookings, theme }: BookingsTableProps) {
                   <i className="pi pi-external-link text-xs"></i>
                 </a>
               ) : (
-                <span style={{ color: "var(--text-color-secondary)" }}>
+                <span style={{ color: "var(--color-text-body)" }}>
                   No link provided
                 </span>
               )}

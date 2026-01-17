@@ -133,8 +133,8 @@ export default function InventoryManager({
       <Button
         label="New Tier"
         icon="pi pi-plus"
-        severity="success"
         onClick={openNew}
+        className="modern-button"
       />
     </div>
   );

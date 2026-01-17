@@ -28,7 +28,7 @@ export default function Sidebar() {
 
   const navItems = [
     {
-      label: "Dashboard",
+      label: "Home",
       icon: "pi pi-home",
       href: "/dashboard",
       active: currentPath === "/dashboard",
@@ -45,12 +45,12 @@ export default function Sidebar() {
       href: "/dashboard/inventory",
       active: currentPath === "/dashboard/inventory",
     },
-    {
-      label: "Analytics",
-      icon: "pi pi-chart-bar",
-      href: "/dashboard",
-      active: false,
-    },
+    // {
+    //   label: "Analytics",
+    //   icon: "pi pi-chart-bar",
+    //   href: "/dashboard",
+    //   active: false,
+    // },
     {
       label: "Settings",
       icon: "pi pi-cog",

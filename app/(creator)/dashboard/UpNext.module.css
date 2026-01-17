@@ -1,0 +1,45 @@
+.scheduleList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.scheduleItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--color-bg-off-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.scheduleDate {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  min-width: 140px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-family: var(--font-body);
+}
+
+.scheduleContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.scheduleSponsor {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-heading);
+  font-family: var(--font-body);
+}
+
+.scheduleTier {
+  font-size: 0.875rem;
+  color: var(--color-text-body);
+  font-family: var(--font-body);
+}

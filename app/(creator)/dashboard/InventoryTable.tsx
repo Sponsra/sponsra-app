@@ -35,17 +35,31 @@ export default function InventoryTable({ tiers }: InventoryTableProps) {
   };
 
   return (
-    <DataTable value={tiers} tableStyle={{ minWidth: "50rem" }}>
+    <DataTable
+      value={tiers}
+      className="modern-table"
+      tableStyle={{ minWidth: "50rem" }}
+    >
       <Column
         field="name"
         header="Product Name"
-        style={{ fontWeight: "bold" }}
+        style={{ fontWeight: 600 }}
       ></Column>
       <Column field="type" header="Type" body={typeBodyTemplate}></Column>
       <Column
         field="price"
         header="Price"
-        body={(data: InventoryTier) => formatCurrency(data.price)}
+        body={(data: InventoryTier) => (
+          <div
+            style={{
+              fontFamily: "var(--font-mono)",
+              fontWeight: 300,
+              color: "var(--color-primary)",
+            }}
+          >
+            {formatCurrency(data.price)}
+          </div>
+        )}
       ></Column>
       <Column
         field="is_active"
