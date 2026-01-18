@@ -46,7 +46,7 @@ export default async function Dashboard() {
   const bookings: Booking[] = newsletter?.bookings || [];
 
   const theme: NewsletterTheme = {
-    primary_color: newsletter?.theme_config?.primary_color || "#3b82f6",
+    primary_color: newsletter?.theme_config?.primary_color || "#6366f1",
     font_family: newsletter?.theme_config?.font_family || "sans",
     layout_style: newsletter?.theme_config?.layout_style || "minimal",
   };
@@ -201,6 +201,7 @@ export default async function Dashboard() {
           newsletterSlug={newsletter?.slug || ""}
           tiers={tiers}
         />
+        <div>Preview Environment Testting</div>
 
         {/* Row 1: The Pulse */}
         <PulseCards

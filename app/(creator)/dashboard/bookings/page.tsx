@@ -31,7 +31,7 @@ export default async function BookingsPage() {
   const bookings: Booking[] = newsletter?.bookings || [];
 
   const theme: NewsletterTheme = {
-    primary_color: newsletter?.theme_config?.primary_color || "#3b82f6",
+    primary_color: newsletter?.theme_config?.primary_color || "#6366f1",
     font_family: newsletter?.theme_config?.font_family || "sans",
     layout_style: newsletter?.theme_config?.layout_style || "minimal",
   };

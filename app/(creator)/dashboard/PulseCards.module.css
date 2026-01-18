@@ -17,24 +17,22 @@
 }
 
 .cardTitle {
-  font-size: 0.75rem;
+  font-size: 1.25rem;
   font-weight: 700;
-  color: var(--color-text-body);
-  text-transform: uppercase;
+  color: var(--color-text-heading);
   letter-spacing: 0.05em;
   margin-bottom: 0.25rem;
   font-family: var(--font-body);
 }
 
 .cardSubtitle {
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   color: var(--color-text-body);
   font-family: var(--font-body);
 }
 
 .cardValue {
   font-size: 1.75rem;
-  font-weight: 300;
   color: var(--color-text-heading);
   margin-bottom: 0.75rem;
   font-family: var(--font-mono);
@@ -45,7 +43,7 @@
 }
 
 .revenueValue {
-  color: #22c55e;
+  color: var(--color-success-value);
 }
 
 .cardTrend {

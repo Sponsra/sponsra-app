@@ -22,7 +22,7 @@ export default async function SettingsPage() {
 
   // Default theme fallback
   const theme: NewsletterTheme = newsletter?.theme_config || {
-    primary_color: "#3b82f6",
+    primary_color: "#6366f1",
     font_family: "sans",
     layout_style: "minimal",
   };

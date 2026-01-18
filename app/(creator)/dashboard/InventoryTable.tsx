@@ -54,7 +54,7 @@ export default function InventoryTable({ tiers }: InventoryTableProps) {
             style={{
               fontFamily: "var(--font-mono)",
               fontWeight: 300,
-              color: "var(--color-primary)",
+              color: "var(--primary-color)",
             }}
           >
             {formatCurrency(data.price)}

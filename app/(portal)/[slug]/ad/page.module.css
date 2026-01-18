@@ -4,5 +4,9 @@
   justify-content: center;
   align-items: center;
   padding: 3rem 1rem;
-  background: linear-gradient(to bottom right, #a2e0f154 0%, #a3aff476 100%);
+  background: linear-gradient(
+    to bottom right,
+    rgba(var(--primary-color-rgb, 79, 70, 229), 0.1) 0%,
+    rgba(var(--primary-color-rgb, 79, 70, 229), 0.15) 100%
+  );
 }

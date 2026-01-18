@@ -19,7 +19,7 @@ export default async function AdBookingPage({ params }: PageProps) {
   ).filter((t: InventoryTierPublic) => t.type === "ad" && t.is_active);
 
   const theme: NewsletterTheme = (newsletter as any).theme_config || {
-    primary_color: "#3b82f6",
+    primary_color: "#6366f1",
     font_family: "sans",
     layout_style: "minimal",
   };

@@ -20,10 +20,11 @@ export default function PortalLayout({
     <>
       {/* Fixed theme for portal pages - not affected by dashboard theme settings */}
       {/* ThemeProvider in root layout will skip theme updates for portal routes */}
+      {/* Using indigo theme as base; primary color is overridden by theme.primary_color via CSS variables */}
       <link
         id="portal-theme"
         rel="stylesheet"
-        href="/themes/lara-light-cyan/theme.css"
+        href="/themes/lara-light-indigo/theme.css"
       />
       <PrimeReactRegistry>{children}</PrimeReactRegistry>
     </>

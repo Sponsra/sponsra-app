@@ -10,7 +10,7 @@ interface AdContent {
 
 export const generateHTML = (
   ad: AdContent,
-  primaryColor: string = "#3b82f6"
+  primaryColor: string = "#6366f1"
 ) => {
   const imageBlock = ad.imageUrl
     ? `<img src="${ad.imageUrl}" alt="${ad.sponsorName}" style="max-width:100%; border-radius:4px; margin-bottom:15px; display:block;" />`

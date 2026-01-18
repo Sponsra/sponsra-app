@@ -1,0 +1,79 @@
+name: Deploy Database Migrations
+
+on:
+  push:
+    branches:
+      - main # Production branch
+      - staging # Staging branch
+      - preview # Preview branch (deploys to staging database)
+  workflow_dispatch: # Allows you to run this manually from GitHub UI if needed
+    inputs:
+      environment:
+        description: "Environment to deploy to"
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+
+jobs:
+  # Staging deployment (automatic on push to staging or preview)
+  deploy-staging:
+    if: github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/preview' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Deploy Migrations to Staging
+        run: |
+          echo "🚀 Deploying migrations to STAGING environment..."
+          supabase db push --db-url "${{ secrets.SUPABASE_DB_URL_STAGING }}" || {
+            echo "❌ Migration failed!"
+            exit 1
+          }
+          echo "✅ Migrations deployed successfully to staging"
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+  # Production deployment (requires manual approval)
+  deploy-production:
+    if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production')
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://app.supabase.com
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Deploy Migrations to Production
+        run: |
+          echo "🚀 Deploying migrations to PRODUCTION environment..."
+          echo "⚠️  WARNING: This will modify the production database!"
+          supabase db push --db-url "${{ secrets.SUPABASE_DB_URL_PROD }}" || {
+            echo "❌ CRITICAL: Migration to production failed!"
+            echo "⚠️  Please review the error above and take appropriate action."
+            exit 1
+          }
+          echo "✅ Migrations deployed successfully to production"
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}

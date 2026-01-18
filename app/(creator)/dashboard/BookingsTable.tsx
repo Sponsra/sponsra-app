@@ -288,7 +288,7 @@ export default function BookingsTable({ bookings, theme }: BookingsTableProps) {
             <div
               style={{
                 fontWeight: 300,
-                color: "var(--color-primary)",
+                color: "var(--primary-color)",
                 fontSize: "0.9375rem",
                 fontFamily: "var(--font-mono)",
               }}
