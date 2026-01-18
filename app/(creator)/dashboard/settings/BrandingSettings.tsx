@@ -21,7 +21,7 @@ export default function BrandingSettings({
 }: BrandingSettingsProps) {
   const [theme, setTheme] = useState<NewsletterTheme>(
     initialTheme || {
-      primary_color: "#3b82f6",
+      primary_color: "#6366f1",
       font_family: "sans",
       layout_style: "minimal",
     }

@@ -41,7 +41,7 @@
 
 .tierName {
   font-weight: 700;
-  color: var(--color-primary);
+  color: var(--primary-color);
   font-family: var(--font-body);
 }
 
