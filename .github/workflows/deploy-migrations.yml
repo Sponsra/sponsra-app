@@ -5,6 +5,7 @@ on:
     branches:
       - main # Production branch
       - staging # Staging branch
+      - preview # Preview branch (deploys to staging database)
   workflow_dispatch: # Allows you to run this manually from GitHub UI if needed
     inputs:
       environment:
@@ -16,9 +17,9 @@ on:
           - production
 
 jobs:
-  # Staging deployment (automatic on push to staging)
+  # Staging deployment (automatic on push to staging or preview)
   deploy-staging:
-    if: github.ref == 'refs/heads/staging' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
+    if: github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/preview' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
     runs-on: ubuntu-latest
 
     permissions:
