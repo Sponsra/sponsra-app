@@ -221,6 +221,7 @@ Map sponsra.link as a Middleware rewrite (or separate Vercel project if easier) 
 Step 11.3: Smoke Test
 Create a real account on the live site.
 Book a real (test mode) ad.
+Created a new migration (20260116000001_secure_storage_uploads.sql) that improves the policy. You still need to add application-level validation in your upload handler (file size, MIME type, dimensions).
 Validation Check:
 [ ] https://sponsra.app loads securely.
 [ ] https://sponsra.link/demo/ad loads the portal.
