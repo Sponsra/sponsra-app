@@ -201,6 +201,7 @@ export default async function Dashboard() {
           newsletterSlug={newsletter?.slug || ""}
           tiers={tiers}
         />
+        <div>Preview Environment</div>
 
         {/* Row 1: The Pulse */}
         <PulseCards
