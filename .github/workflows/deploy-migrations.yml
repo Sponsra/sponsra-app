@@ -34,45 +34,11 @@ jobs:
         with:
           version: latest
 
-      - name: Verify Supabase CLI
-        run: supabase --version
-
       - name: Deploy Migrations to Staging
         run: |
           echo "🚀 Deploying migrations to STAGING environment..."
-
-          # Force IPv4 by resolving hostname and using IPv4 address
-          DB_URL="${{ secrets.SUPABASE_DB_URL_STAGING }}"
-
-          # Extract hostname from connection string (handles both @host:port and @host/)
-          HOSTNAME=$(echo "$DB_URL" | sed -E 's|.*@([^:/]+)([:/].*)?|\1|')
-          if [ -n "$HOSTNAME" ] && [ "$HOSTNAME" != "$DB_URL" ]; then
-            echo "🔍 Resolving $HOSTNAME to IPv4 address..."
-            # Use dig to get IPv4 address (more reliable than getent)
-            IPV4=$(dig +short "$HOSTNAME" A | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' | head -1)
-            if [ -n "$IPV4" ]; then
-              echo "✅ Using IPv4 address: $IPV4"
-              # Replace hostname with IPv4 in connection string
-              DB_URL=$(echo "$DB_URL" | sed "s/@${HOSTNAME}/@${IPV4}/")
-            else
-              echo "⚠️  Could not resolve to IPv4, trying alternative method..."
-              # Fallback: use getent
-              IPV4=$(getent ahostsv4 "$HOSTNAME" | awk '{print $1}' | head -1)
-              if [ -n "$IPV4" ]; then
-                echo "✅ Using IPv4 address (fallback): $IPV4"
-                DB_URL=$(echo "$DB_URL" | sed "s/@${HOSTNAME}/@${IPV4}/")
-              else
-                echo "⚠️  Could not resolve to IPv4, using original connection string"
-              fi
-            fi
-          fi
-
-          # Force Go runtime to prefer IPv4 and use Go's DNS resolver
-          export GODEBUG=netdns=go
-
-          supabase db push --db-url "$DB_URL" || {
+          supabase db push --db-url "${{ secrets.SUPABASE_DB_URL_STAGING }}" || {
             echo "❌ Migration failed!"
-            echo "💡 Tip: Consider using Connection Pooler URL (port 6543) instead of direct connection"
             exit 1
           }
           echo "✅ Migrations deployed successfully to staging"
@@ -99,60 +65,15 @@ jobs:
         with:
           version: latest
 
-      - name: Verify Supabase CLI
-        run: supabase --version
-
-      - name: List pending migrations
-        run: |
-          echo "📋 Checking migration status..."
-          # This will show what migrations will be applied
-          supabase migration list --db-url "${{ secrets.SUPABASE_DB_URL_PROD }}" || echo "Note: Migration list may not be available, proceeding with push..."
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-        continue-on-error: true
-
       - name: Deploy Migrations to Production
         run: |
           echo "🚀 Deploying migrations to PRODUCTION environment..."
           echo "⚠️  WARNING: This will modify the production database!"
-
-          # Force IPv4 by resolving hostname and using IPv4 address
-          DB_URL="${{ secrets.SUPABASE_DB_URL_PROD }}"
-
-          # Extract hostname from connection string (handles both @host:port and @host/)
-          HOSTNAME=$(echo "$DB_URL" | sed -E 's|.*@([^:/]+)([:/].*)?|\1|')
-          if [ -n "$HOSTNAME" ] && [ "$HOSTNAME" != "$DB_URL" ]; then
-            echo "🔍 Resolving $HOSTNAME to IPv4 address..."
-            # Use dig to get IPv4 address (more reliable than getent)
-            IPV4=$(dig +short "$HOSTNAME" A | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' | head -1)
-            if [ -n "$IPV4" ]; then
-              echo "✅ Using IPv4 address: $IPV4"
-              # Replace hostname with IPv4 in connection string
-              DB_URL=$(echo "$DB_URL" | sed "s/@${HOSTNAME}/@${IPV4}/")
-            else
-              echo "⚠️  Could not resolve to IPv4, trying alternative method..."
-              # Fallback: use getent
-              IPV4=$(getent ahostsv4 "$HOSTNAME" | awk '{print $1}' | head -1)
-              if [ -n "$IPV4" ]; then
-                echo "✅ Using IPv4 address (fallback): $IPV4"
-                DB_URL=$(echo "$DB_URL" | sed "s/@${HOSTNAME}/@${IPV4}/")
-              else
-                echo "⚠️  Could not resolve to IPv4, using original connection string"
-              fi
-            fi
-          fi
-
-          # Force Go runtime to prefer IPv4 and use Go's DNS resolver
-          export GODEBUG=netdns=go
-
-          # Run migrations with error handling
-          supabase db push --db-url "$DB_URL" || {
+          supabase db push --db-url "${{ secrets.SUPABASE_DB_URL_PROD }}" || {
             echo "❌ CRITICAL: Migration to production failed!"
             echo "⚠️  Please review the error above and take appropriate action."
-            echo "💡 Tip: Consider using Connection Pooler URL (port 6543) instead of direct connection"
             exit 1
           }
-
           echo "✅ Migrations deployed successfully to production"
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
