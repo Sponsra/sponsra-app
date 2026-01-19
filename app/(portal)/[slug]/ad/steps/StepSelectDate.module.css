@@ -15,7 +15,8 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  overflow-x: visible;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
 }
 
 .buttonContainer {
@@ -94,7 +95,13 @@
   background: var(--color-bg-off-white);
   transform: scale(1.01);
   box-shadow: 0 0 0 1px rgba(var(--primary-color-rgb), 0.2), var(--shadow-sm);
-  z-index: 1;
+  z-index: 10;
+}
+
+.tierCardUnselected:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+  z-index: 10;
 }
 
 .tierCardSelected {
@@ -191,6 +198,17 @@
   width: 100%;
   height: 100%;
   overflow: auto;
+  max-width: 100%;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
+}
+
+/* Mobile calendar adjustments */
+@media (max-width: 768px) {
+  .calendarContainer {
+    padding: 1rem;
+    overflow-x: hidden;
+  }
 }
 
 /* Remove calendar borders for clean look */
