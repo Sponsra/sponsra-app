@@ -24,7 +24,7 @@ export default function PortalLayout({
       <link
         id="portal-theme"
         rel="stylesheet"
-        href="/themes/lara-light-indigo/theme.css"
+        href="/themes/lara-light-cyan/theme.css"
       />
       <PrimeReactRegistry>{children}</PrimeReactRegistry>
     </>

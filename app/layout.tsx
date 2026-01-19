@@ -38,7 +38,7 @@ export default function RootLayout({
         <link
           id="app-theme"
           rel="stylesheet"
-          href="/themes/lara-light-indigo/theme.css"
+          href="/themes/lara-light-cyan/theme.css"
         />
       </head>
       <body suppressHydrationWarning>
