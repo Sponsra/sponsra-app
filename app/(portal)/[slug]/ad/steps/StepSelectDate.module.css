@@ -15,7 +15,8 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  overflow-x: visible;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
 }
 
 .buttonContainer {
@@ -94,7 +95,13 @@
   background: var(--color-bg-off-white);
   transform: scale(1.01);
   box-shadow: 0 0 0 1px rgba(var(--primary-color-rgb), 0.2), var(--shadow-sm);
-  z-index: 1;
+  z-index: 10;
+}
+
+.tierCardUnselected:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+  z-index: 10;
 }
 
 .tierCardSelected {
@@ -191,6 +198,17 @@
   width: 100%;
   height: 100%;
   overflow: auto;
+  max-width: 100%;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
+}
+
+/* Mobile calendar adjustments */
+@media (max-width: 768px) {
+  .calendarContainer {
+    padding: 1rem;
+    overflow-x: hidden;
+  }
 }
 
 /* Remove calendar borders for clean look */
@@ -271,4 +289,33 @@
 .calendarContainer :global(.p-datepicker table td > span.p-focus) {
   border-color: var(--primary-color);
   box-shadow: 0 0 0 1px rgba(var(--primary-color-rgb, 79, 70, 229), 0.2);
+}
+
+/* Date status styles */
+.availableDate {
+  background: rgba(var(--primary-color-rgb, 79, 70, 229), 0.15) !important;
+  color: var(--primary-color) !important;
+  font-weight: 600;
+  border-radius: var(--radius);
+  padding: 0.25rem;
+  display: inline-block;
+  width: 100%;
+  text-align: center;
+  border: 1px solid rgba(var(--primary-color-rgb, 79, 70, 229), 0.3) !important;
+}
+
+.bookedDate {
+  text-decoration: line-through !important;
+  color: var(--color-text-muted, #999) !important;
+  opacity: 0.6;
+  cursor: not-allowed !important;
+  background: rgba(0, 0, 0, 0.05) !important;
+  font-weight: 400;
+}
+
+.unavailableDate {
+  color: var(--color-text-muted, #999) !important;
+  opacity: 0.5;
+  cursor: not-allowed !important;
+  background: transparent !important;
 }

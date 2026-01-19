@@ -1,0 +1,64 @@
+.schedulePreview {
+  background: var(--surface-50);
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--surface-border);
+  margin-top: 1rem;
+}
+
+.schedulePreview h4 {
+  margin: 0 0 0.75rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.previewDateList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 300px;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  position: relative;
+}
+
+/* Scroll indicator gradient */
+.previewDateList::after {
+  content: "";
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 20px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    var(--surface-50)
+  );
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.previewDateList:not(:hover)::after {
+  opacity: 1;
+}
+
+.previewDate {
+  padding: 0.5rem;
+  background: var(--surface-card);
+  border-radius: 4px;
+  border: 1px solid var(--surface-border);
+  font-size: 0.875rem;
+  color: var(--text-color);
+}
+
+.previewDateAvailable {
+  border-left: 3px solid var(--green-500);
+}
+
+.previewDateUnavailable {
+  border-left: 3px solid var(--red-500);
+  opacity: 0.7;
+}

@@ -315,7 +315,12 @@ export default function RequiresAttention({
           </div>
         }
         visible={!!selectedBooking}
-        style={{ width: "50vw", minWidth: "400px" }}
+        style={{ 
+          width: "90vw", 
+          maxWidth: "50vw", 
+          minWidth: "320px",
+          maxHeight: "90vh"
+        }}
         onHide={() => setSelectedBooking(null)}
         className="modern-dialog"
         footer={renderDialogFooter()}

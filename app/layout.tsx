@@ -10,6 +10,9 @@ import "primereact/resources/primereact.min.css";
 export const metadata: Metadata = {
   title: "Sponsra",
   description: "The Newsletter Infrastructure Platform",
+  icons: {
+    icon: "/logo.svg",
+  },
 };
 
 export default function RootLayout({

@@ -5,7 +5,8 @@ import { InputText } from "primereact/inputtext";
 import { Button } from "primereact/button";
 import { Toast } from "primereact/toast";
 import { updateNewsletterSettings } from "@/app/actions/inventory";
-import styles from "./settings.module.css";
+import PublicationScheduleSection from "./PublicationScheduleSection";
+import sharedStyles from "./shared.module.css";
 
 interface NewsletterSettingsProps {
   initialData: {
@@ -61,17 +62,17 @@ export default function NewsletterSettings({
   };
 
   return (
-    <div className={styles.section}>
+    <div className={sharedStyles.section}>
       <Toast ref={toast} />
-      <div className={styles.sectionHeader}>
+      <div className={sharedStyles.sectionHeader}>
         <h2>General Configuration</h2>
         <p>Manage your public profile and URL</p>
       </div>
 
       <form onSubmit={handleSubmit}>
-        <div className={styles.formGrid}>
+        <div className={sharedStyles.formGrid}>
           {/* Newsletter Name */}
-          <div className={styles.field}>
+          <div className={sharedStyles.field}>
             <label htmlFor="newsletterName">Newsletter Name</label>
             <InputText
               id="newsletterName"
@@ -85,7 +86,7 @@ export default function NewsletterSettings({
           </div>
 
           {/* URL Slug */}
-          <div className={styles.field}>
+          <div className={sharedStyles.field}>
             <label htmlFor="newsletterSlug">URL Slug</label>
             <div className="p-inputgroup">
               <span className="p-inputgroup-addon">sponsra.com/</span>
@@ -108,7 +109,7 @@ export default function NewsletterSettings({
           </div>
         </div>
 
-        <div className={styles.actions}>
+        <div className={sharedStyles.actions}>
           <Button
             label="Save Changes"
             icon="pi pi-save"
@@ -117,6 +118,11 @@ export default function NewsletterSettings({
           />
         </div>
       </form>
+
+      {/* Publication Schedule Section */}
+      {initialData?.id && (
+        <PublicationScheduleSection newsletterId={initialData.id} />
+      )}
     </div>
   );
 }

@@ -8,9 +8,12 @@ import { InputNumber } from "primereact/inputnumber";
 import { InputTextarea } from "primereact/inputtextarea";
 import { Dropdown } from "primereact/dropdown";
 import { Checkbox } from "primereact/checkbox";
-import { Accordion, AccordionTab } from "primereact/accordion"; // <--- Import Accordion
-import { TierFormData } from "@/app/types/inventory";
-import styles from "./settings.module.css";
+import { TabView, TabPanel } from "primereact/tabview";
+import { Message } from "primereact/message";
+import { TierFormData, AvailabilitySchedule } from "@/app/types/inventory";
+import TierAvailabilitySection from "./TierAvailabilitySection";
+import sharedStyles from "./shared.module.css";
+import styles from "./TierFormDialog.module.css";
 
 interface TierFormDialogProps {
   visible: boolean;
@@ -18,6 +21,8 @@ interface TierFormDialogProps {
   onSave: (data: TierFormData) => Promise<void>;
   initialData?: Partial<TierFormData>;
   loading: boolean;
+  newsletterId: string;
+  onScheduleChange?: (schedule: AvailabilitySchedule | null) => void;
 }
 
 export default function TierFormDialog({
@@ -26,8 +31,9 @@ export default function TierFormDialog({
   onSave,
   initialData,
   loading,
+  newsletterId,
+  onScheduleChange,
 }: TierFormDialogProps) {
-  // Initialize with defaults including the new specs
   const [formData, setFormData] = useState<TierFormData>({
     name: "",
     type: "ad",
@@ -39,9 +45,11 @@ export default function TierFormDialog({
     specs_image_ratio: "any",
   });
 
-  // Reset form when dialog opens/data changes
+  const [activeIndex, setActiveIndex] = useState(0); // Track active tab
+
   useEffect(() => {
     if (visible) {
+      setActiveIndex(0); // Reset to first tab on open
       setFormData({
         id: initialData?.id,
         name: initialData?.name || "",
@@ -49,7 +57,6 @@ export default function TierFormDialog({
         price: initialData?.price || 0,
         description: initialData?.description || "",
         is_active: initialData?.is_active ?? true,
-        // Load existing specs or fall back to defaults
         specs_headline_limit: initialData?.specs_headline_limit || 60,
         specs_body_limit: initialData?.specs_body_limit || 280,
         specs_image_ratio: initialData?.specs_image_ratio || "any",
@@ -58,7 +65,11 @@ export default function TierFormDialog({
   }, [visible, initialData]);
 
   const handleSubmit = () => {
-    if (!formData.name || formData.price <= 0) return;
+    if (!formData.name || formData.price < 0) {
+      // Simple validation: switch to first tab if name is missing
+      setActiveIndex(0);
+      return;
+    }
     onSave(formData);
   };
 
@@ -74,101 +85,123 @@ export default function TierFormDialog({
     { label: "No Image Allowed", value: "no_image" },
   ];
 
+  // Footer includes the Main Actions + The Active Toggle
+  const renderFooter = () => (
+    <div className="flex justify-content-between align-items-center w-full">
+      <div className="flex align-items-center">
+        <Checkbox
+          inputId="is_active"
+          onChange={(e) =>
+            setFormData({ ...formData, is_active: e.checked || false })
+          }
+          checked={formData.is_active}
+        />
+        <label htmlFor="is_active" className="ml-2 cursor-pointer">
+          Active
+        </label>
+      </div>
+      <div>
+        <Button
+          label="Cancel"
+          icon="pi pi-times"
+          text
+          onClick={onHide}
+          disabled={loading}
+        />
+        <Button
+          label="Save Tier"
+          icon="pi pi-check"
+          onClick={handleSubmit}
+          loading={loading}
+        />
+      </div>
+    </div>
+  );
+
   return (
     <Dialog
       visible={visible}
-      style={{ width: "35rem" }} // Slightly wider for the accordion
-      breakpoints={{ "960px": "75vw", "641px": "90vw" }}
-      header={formData.id ? "Edit Tier" : "New Tier"}
+      style={{ width: "40rem", maxWidth: "95vw" }}
+      header={formData.id ? `Edit ${formData.name}` : "Create New Tier"}
       modal
       className="p-fluid"
-      footer={
-        <div>
-          <Button
-            label="Cancel"
-            icon="pi pi-times"
-            outlined
-            onClick={onHide}
-            disabled={loading}
-          />
-          <Button
-            label="Save"
-            icon="pi pi-check"
-            onClick={handleSubmit}
-            loading={loading}
-            autoFocus
-          />
-        </div>
-      }
+      footer={renderFooter()}
       onHide={onHide}
     >
-      {/* --- Main Settings --- */}
-      <div className={styles.field}>
-        <label htmlFor="name" style={{ fontWeight: "bold" }}>
-          Name
-        </label>
-        <InputText
-          id="name"
-          value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          required
-          autoFocus
-        />
-      </div>
+      <TabView
+        activeIndex={activeIndex}
+        onTabChange={(e) => setActiveIndex(e.index)}
+      >
+        {/* --- TAB 1: ESSENTIALS --- */}
+        <TabPanel header="Essentials" leftIcon="pi pi-tag">
+          <div className="flex flex-column gap-3 mt-2">
+            <div className={sharedStyles.field}>
+              <label htmlFor="name">Tier Name</label>
+              <InputText
+                id="name"
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
+                placeholder="e.g., Primary Sponsor"
+                required
+              />
+            </div>
 
-      <div className={styles.formGrid} style={{ marginTop: "1rem" }}>
-        <div className={styles.field}>
-          <label htmlFor="type" style={{ fontWeight: "bold" }}>
-            Type
-          </label>
-          <Dropdown
-            id="type"
-            value={formData.type}
-            onChange={(e) => setFormData({ ...formData, type: e.value })}
-            options={typeOptions}
-            optionLabel="label"
+            <div className="formgrid grid">
+              <div className="field col-6">
+                <label htmlFor="type">Type</label>
+                <Dropdown
+                  id="type"
+                  value={formData.type}
+                  onChange={(e) => setFormData({ ...formData, type: e.value })}
+                  options={typeOptions}
+                  optionLabel="label"
+                />
+              </div>
+              <div className="field col-6">
+                <label htmlFor="price">Price (USD)</label>
+                <InputNumber
+                  id="price"
+                  value={formData.price ? formData.price / 100 : 0}
+                  onValueChange={(e) =>
+                    setFormData({ ...formData, price: (e.value || 0) * 100 })
+                  }
+                  mode="currency"
+                  currency="USD"
+                  locale="en-US"
+                />
+              </div>
+            </div>
+
+            <div className={sharedStyles.field}>
+              <label htmlFor="description">Description (Internal)</label>
+              <InputTextarea
+                id="description"
+                value={formData.description}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
+                rows={3}
+                placeholder="Notes about this tier..."
+              />
+            </div>
+          </div>
+        </TabPanel>
+
+        {/* --- TAB 2: RULES / CONSTRAINTS --- */}
+        <TabPanel header="Ad Rules" leftIcon="pi pi-list">
+          <Message
+            severity="info"
+            text="These rules will be enforced when an advertiser uploads their creative."
+            className="w-full mb-3"
           />
-        </div>
-        <div className={styles.field}>
-          <label htmlFor="price" style={{ fontWeight: "bold" }}>
-            Price (USD)
-          </label>
-          <InputNumber
-            id="price"
-            value={formData.price ? formData.price / 100 : 0}
-            onValueChange={(e) =>
-              setFormData({ ...formData, price: (e.value || 0) * 100 })
-            }
-            mode="currency"
-            currency="USD"
-            locale="en-US"
-          />
-        </div>
-      </div>
 
-      <div className={styles.field} style={{ marginTop: "1rem" }}>
-        <label htmlFor="description" style={{ fontWeight: "bold" }}>
-          Description
-        </label>
-        <InputTextarea
-          id="description"
-          value={formData.description}
-          onChange={(e) =>
-            setFormData({ ...formData, description: e.target.value })
-          }
-          rows={3}
-          cols={20}
-        />
-      </div>
-
-      {/* --- Advanced Rules (New Section) --- */}
-      <Accordion className="mt-4" activeIndex={null}>
-        <AccordionTab header="Ad Constraints (The Rules)">
           <div className="flex flex-column gap-3">
-            <div className="grid">
-              <div className="col-6">
-                <div className={styles.field}>
-                  <label htmlFor="headlineLimit">Headline Length</label>
+            <div className="formgrid grid">
+              <div className="field col-6">
+                <label htmlFor="headlineLimit">Headline Max Length</label>
+                <div className="p-inputgroup">
                   <InputNumber
                     id="headlineLimit"
                     value={formData.specs_headline_limit}
@@ -180,13 +213,13 @@ export default function TierFormDialog({
                     }
                     min={10}
                     max={200}
-                    suffix=" chars"
                   />
+                  <span className="p-inputgroup-addon">chars</span>
                 </div>
               </div>
-              <div className="col-6">
-                <div className={styles.field}>
-                  <label htmlFor="bodyLimit">Body Length</label>
+              <div className="field col-6">
+                <label htmlFor="bodyLimit">Body Max Length</label>
+                <div className="p-inputgroup">
                   <InputNumber
                     id="bodyLimit"
                     value={formData.specs_body_limit}
@@ -198,13 +231,13 @@ export default function TierFormDialog({
                     }
                     min={50}
                     max={5000}
-                    suffix=" chars"
                   />
+                  <span className="p-inputgroup-addon">chars</span>
                 </div>
               </div>
             </div>
 
-            <div className={styles.field}>
+            <div className={sharedStyles.field}>
               <label htmlFor="imageRatio">Image Requirement</label>
               <Dropdown
                 id="imageRatio"
@@ -215,24 +248,19 @@ export default function TierFormDialog({
                 }
                 optionLabel="label"
               />
-              <small className="text-500 mt-1">
-                We will validate uploaded images against this rule.
-              </small>
             </div>
           </div>
-        </AccordionTab>
-      </Accordion>
+        </TabPanel>
 
-      <div className="flex align-items-center mt-3 gap-2">
-        <Checkbox
-          inputId="is_active"
-          onChange={(e) =>
-            setFormData({ ...formData, is_active: e.checked || false })
-          }
-          checked={formData.is_active}
-        />
-        <label htmlFor="is_active">Active (Visible in Portal)</label>
-      </div>
+        {/* --- TAB 3: AVAILABILITY --- */}
+        <TabPanel header="Schedule" leftIcon="pi pi-calendar">
+          <TierAvailabilitySection
+            tierId={formData.id}
+            newsletterId={newsletterId}
+            onScheduleChange={onScheduleChange}
+          />
+        </TabPanel>
+      </TabView>
     </Dialog>
   );
 }

@@ -120,6 +120,24 @@ h6 {
   box-shadow: var(--focus-ring);
 }
 
+/* Enhanced focus states for accessibility */
+button:focus-visible,
+a:focus-visible,
+.nav-item:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+  border-radius: var(--radius);
+}
+
+/* Ensure touch targets meet minimum size (44x44px) */
+button,
+.nav-item,
+.mobile-menu-button,
+.sidebar-close {
+  min-height: 44px;
+  min-width: 44px;
+}
+
 .p-inputtext:hover:not(:disabled),
 .p-inputtextarea:hover:not(:disabled),
 .p-dropdown:hover:not(.p-disabled),
@@ -319,10 +337,89 @@ h6 {
   box-shadow: var(--shadow-sm);
 }
 
+/* Mobile menu button */
+.mobile-menu-button {
+  display: none;
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 101;
+  background: var(--color-bg-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 0.75rem;
+  cursor: pointer;
+  color: var(--color-text-heading);
+  transition: var(--transition);
+  min-width: 44px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-md);
+}
+
+.mobile-menu-button:hover {
+  background: var(--color-bg-off-white);
+  border-color: var(--primary-color);
+}
+
+.mobile-menu-button i {
+  font-size: 1.25rem;
+}
+
+/* Sidebar backdrop */
+.sidebar-backdrop {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 99;
+  animation: fadeIn 0.2s ease;
+}
+
+.sidebar-close {
+  display: none;
+  background: transparent;
+  border: none;
+  color: var(--color-text-heading);
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: var(--radius);
+  transition: var(--transition);
+  min-width: 44px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar-close:hover {
+  background: var(--color-bg-off-white);
+}
+
+.sidebar-close i {
+  font-size: 1.25rem;
+}
+
 @media (max-width: 768px) {
+  .mobile-menu-button {
+    display: flex;
+  }
+
+  .sidebar-backdrop {
+    display: block;
+  }
+
+  .sidebar-close {
+    display: flex;
+  }
+
   .dashboard-sidebar {
     transform: translateX(-100%);
-    transition: transform 0.3s ease;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: var(--shadow-md);
   }
 
   .dashboard-sidebar.open {
@@ -332,6 +429,19 @@ h6 {
   .dashboard-content {
     margin-left: 0;
     padding: 1rem;
+  }
+
+  .sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+}
+
+/* Tablet breakpoint */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .dashboard-content {
+    padding: 1.5rem;
   }
 }
 
@@ -386,6 +496,8 @@ h6 {
   width: 100%;
   text-align: left;
   font-family: var(--font-body);
+  min-height: 44px;
+  min-width: 44px;
 }
 
 .nav-item:hover {

@@ -20,8 +20,8 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   // Check if we're on a portal route (booking pages)
   const isPortalRoute = pathname?.includes("/ad") || false;
 
-  // Always use indigo theme color (electric indigo #4F46E5)
-  const themeColor = "indigo";
+  // Always use cyan theme color
+  const themeColor = "cyan";
 
   const updateTheme = (dark: boolean) => {
     // Don't update theme for portal routes
