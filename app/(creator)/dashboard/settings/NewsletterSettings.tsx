@@ -5,6 +5,7 @@ import { InputText } from "primereact/inputtext";
 import { Button } from "primereact/button";
 import { Toast } from "primereact/toast";
 import { updateNewsletterSettings } from "@/app/actions/inventory";
+import PublicationScheduleSection from "./PublicationScheduleSection";
 import styles from "./settings.module.css";
 
 interface NewsletterSettingsProps {
@@ -117,6 +118,11 @@ export default function NewsletterSettings({
           />
         </div>
       </form>
+
+      {/* Publication Schedule Section */}
+      {initialData?.id && (
+        <PublicationScheduleSection newsletterId={initialData.id} />
+      )}
     </div>
   );
 }

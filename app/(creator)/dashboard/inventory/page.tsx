@@ -39,7 +39,10 @@ export default async function InventoryPage() {
         </div>
 
         <div className={styles.container}>
-          <InventoryManager initialTiers={tiers || []} />
+          <InventoryManager 
+            initialTiers={tiers || []} 
+            newsletterId={newsletter?.id || ""}
+          />
         </div>
       </div>
     </div>

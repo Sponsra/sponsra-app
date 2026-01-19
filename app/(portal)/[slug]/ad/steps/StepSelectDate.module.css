@@ -272,3 +272,32 @@
   border-color: var(--primary-color);
   box-shadow: 0 0 0 1px rgba(var(--primary-color-rgb, 79, 70, 229), 0.2);
 }
+
+/* Date status styles */
+.availableDate {
+  background: rgba(var(--primary-color-rgb, 79, 70, 229), 0.15) !important;
+  color: var(--primary-color) !important;
+  font-weight: 600;
+  border-radius: var(--radius);
+  padding: 0.25rem;
+  display: inline-block;
+  width: 100%;
+  text-align: center;
+  border: 1px solid rgba(var(--primary-color-rgb, 79, 70, 229), 0.3) !important;
+}
+
+.bookedDate {
+  text-decoration: line-through !important;
+  color: var(--color-text-muted, #999) !important;
+  opacity: 0.6;
+  cursor: not-allowed !important;
+  background: rgba(0, 0, 0, 0.05) !important;
+  font-weight: 400;
+}
+
+.unavailableDate {
+  color: var(--color-text-muted, #999) !important;
+  opacity: 0.5;
+  cursor: not-allowed !important;
+  background: transparent !important;
+}

@@ -9,7 +9,8 @@ import { InputTextarea } from "primereact/inputtextarea";
 import { Dropdown } from "primereact/dropdown";
 import { Checkbox } from "primereact/checkbox";
 import { Accordion, AccordionTab } from "primereact/accordion"; // <--- Import Accordion
-import { TierFormData } from "@/app/types/inventory";
+import { TierFormData, AvailabilitySchedule } from "@/app/types/inventory";
+import TierAvailabilitySection from "./TierAvailabilitySection";
 import styles from "./settings.module.css";
 
 interface TierFormDialogProps {
@@ -18,6 +19,8 @@ interface TierFormDialogProps {
   onSave: (data: TierFormData) => Promise<void>;
   initialData?: Partial<TierFormData>;
   loading: boolean;
+  newsletterId: string;
+  onScheduleChange?: (schedule: AvailabilitySchedule | null) => void;
 }
 
 export default function TierFormDialog({
@@ -26,6 +29,8 @@ export default function TierFormDialog({
   onSave,
   initialData,
   loading,
+  newsletterId,
+  onScheduleChange,
 }: TierFormDialogProps) {
   // Initialize with defaults including the new specs
   const [formData, setFormData] = useState<TierFormData>({
@@ -220,6 +225,14 @@ export default function TierFormDialog({
               </small>
             </div>
           </div>
+        </AccordionTab>
+
+        <AccordionTab header="Availability Schedule">
+          <TierAvailabilitySection
+            tierId={formData.id}
+            newsletterId={newsletterId}
+            onScheduleChange={onScheduleChange}
+          />
         </AccordionTab>
       </Accordion>
 

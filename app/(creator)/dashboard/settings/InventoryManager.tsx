@@ -5,23 +5,36 @@ import { Button } from "primereact/button";
 import { Toast } from "primereact/toast";
 import { Toolbar } from "primereact/toolbar";
 import { Dialog } from "primereact/dialog";
-import { InventoryTier, TierFormData } from "@/app/types/inventory";
-import { upsertTier, deleteTier } from "@/app/actions/inventory";
+import {
+  InventoryTier,
+  TierFormData,
+  AvailabilitySchedule,
+} from "@/app/types/inventory";
+import {
+  upsertTier,
+  deleteTier,
+  upsertTierAvailability,
+} from "@/app/actions/inventory";
 import InventoryTable from "./InventoryTable"; // The new table we just made
 import TierFormDialog from "./TierFormDialog"; // The new dialog we just made
 import styles from "./settings.module.css";
 
 interface InventoryManagerProps {
   initialTiers: InventoryTier[];
+  newsletterId: string;
 }
 
 export default function InventoryManager({
   initialTiers,
+  newsletterId,
 }: InventoryManagerProps) {
   const [tiers, setTiers] = useState<InventoryTier[]>(initialTiers);
   const [tierDialog, setTierDialog] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState(false);
   const [selectedTier, setSelectedTier] = useState<Partial<TierFormData>>({});
+  const [tierSchedule, setTierSchedule] = useState<AvailabilitySchedule | null>(
+    null
+  );
   const [loading, setLoading] = useState(false);
   const toast = useRef<Toast>(null);
 
@@ -64,12 +77,39 @@ export default function InventoryManager({
       const result = await upsertTier(data);
 
       if (result.success) {
+        // Get the tier ID (from result for new tiers, or from data.id for existing)
+        const tierId = result.tierId || data.id;
+
+        // Save the availability schedule if one was configured
+        if (tierId && tierSchedule) {
+          // Update the schedule with the correct tier_id
+          const scheduleToSave = {
+            ...tierSchedule,
+            tier_id: tierId,
+          };
+
+          const scheduleResult = await upsertTierAvailability(
+            tierId,
+            scheduleToSave
+          );
+          if (!scheduleResult.success) {
+            toast.current?.show({
+              severity: "warn",
+              summary: "Warning",
+              detail:
+                "Tier saved but schedule update failed: " +
+                scheduleResult.error,
+            });
+          }
+        }
+
         toast.current?.show({
           severity: "success",
           summary: "Success",
           detail: "Tier saved successfully",
         });
         setTierDialog(false);
+        setTierSchedule(null); // Reset schedule state
         // In a production app, we might use router.refresh() here
         // to re-fetch server data, but for now we rely on the redirect/revalidate
         // or we could optimistically update local state here if needed.
@@ -154,10 +194,15 @@ export default function InventoryManager({
       {/* Create/Edit Dialog */}
       <TierFormDialog
         visible={tierDialog}
-        onHide={() => setTierDialog(false)}
+        onHide={() => {
+          setTierDialog(false);
+          setTierSchedule(null); // Reset schedule when dialog closes
+        }}
         onSave={handleSave}
         initialData={selectedTier}
         loading={loading}
+        newsletterId={newsletterId}
+        onScheduleChange={setTierSchedule}
       />
 
       {/* Delete Confirmation Dialog */}
