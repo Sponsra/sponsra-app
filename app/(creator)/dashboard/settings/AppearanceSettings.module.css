@@ -1,0 +1,20 @@
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: var(--surface-50);
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.label {
+  font-weight: 600;
+  font-size: 0.9375rem;
+  color: var(--text-color);
+}
+
+.sublabel {
+  font-size: 0.875rem;
+  color: var(--text-color-secondary);
+}

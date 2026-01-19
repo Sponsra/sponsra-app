@@ -1,22 +1,10 @@
-// app/(creator)/dashboard/settings/SchedulePreview.tsx
-// Reusable component for displaying upcoming dates preview
-
 "use client";
 
 import React, { useMemo } from "react";
-import {
-  PublicationSchedule,
-  AvailabilitySchedule,
-} from "@/app/types/inventory";
 import { generatePreviewDates } from "@/app/utils/schedule-helpers";
-import styles from "./settings.module.css";
-
-interface SchedulePreviewProps {
-  schedule: PublicationSchedule | AvailabilitySchedule | null;
-  startDate?: Date; // Default: today
-  count?: number; // Default: 15
-  isLoading?: boolean;
-}
+import { formatPreviewDate } from "./utils/date-formatters";
+import { SchedulePreviewProps } from "./types/schedule";
+import styles from "./SchedulePreview.module.css";
 
 export default function SchedulePreview({
   schedule,
@@ -28,16 +16,6 @@ export default function SchedulePreview({
     if (!schedule) return [];
     return generatePreviewDates(schedule, startDate, count);
   }, [schedule, startDate, count]);
-
-  const formatDate = (dateStr: string): string => {
-    const date = new Date(`${dateStr}T00:00:00Z`);
-    return date.toLocaleDateString("en-US", {
-      weekday: "short",
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
 
   if (isLoading) {
     return (
@@ -72,7 +50,7 @@ export default function SchedulePreview({
       <div className={styles.previewDateList}>
         {previewDates.map((dateStr) => (
           <div key={dateStr} className={styles.previewDate}>
-            {formatDate(dateStr)}
+            {formatPreviewDate(dateStr)}
           </div>
         ))}
       </div>

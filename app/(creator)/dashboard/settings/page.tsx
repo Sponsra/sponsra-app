@@ -3,8 +3,8 @@ import { redirect } from "next/navigation";
 import Sidebar from "../Sidebar";
 import AppearanceSettings from "./AppearanceSettings";
 import NewsletterSettings from "./NewsletterSettings";
-import BrandingSettings from "./BrandingSettings"; // <--- Import
-import styles from "./settings.module.css";
+import BrandingSettings from "./BrandingSettings";
+import sharedStyles from "./shared.module.css";
 import type { NewsletterTheme } from "@/app/types/inventory";
 
 export default async function SettingsPage() {
@@ -40,7 +40,7 @@ export default async function SettingsPage() {
           </div>
         </div>
 
-        <div className={styles.container}>
+        <div className={sharedStyles.container}>
           <AppearanceSettings />
 
           <NewsletterSettings initialData={newsletter} />

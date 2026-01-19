@@ -1,26 +1,18 @@
-// app/(creator)/dashboard/settings/SchedulePatternSelector.tsx
-// Reusable component for pattern type selection and conditional fields
-
 "use client";
 
 import React from "react";
 import { Dropdown } from "primereact/dropdown";
 import { Checkbox } from "primereact/checkbox";
 import { InputNumber } from "primereact/inputnumber";
-import { PatternType } from "@/app/types/inventory";
 import { getDayOfWeekLabel } from "@/app/utils/schedule-helpers";
-import styles from "./settings.module.css";
-
-interface SchedulePatternSelectorProps {
-  patternType: PatternType | null;
-  onPatternTypeChange: (type: PatternType | null) => void;
-  daysOfWeek: number[];
-  onDaysOfWeekChange: (days: number[]) => void;
-  dayOfMonth: number | null;
-  onDayOfMonthChange: (day: number | null) => void;
-  monthlyWeekNumber: number | null;
-  onMonthlyWeekNumberChange: (week: number | null) => void;
-}
+import {
+  patternOptions,
+  weekOptions,
+  allDaysOfWeek,
+} from "./utils/schedule-options";
+import { SchedulePatternSelectorProps } from "./types/schedule";
+import sharedStyles from "./shared.module.css";
+import styles from "./SchedulePatternSelector.module.css";
 
 export default function SchedulePatternSelector({
   patternType,
@@ -32,24 +24,6 @@ export default function SchedulePatternSelector({
   monthlyWeekNumber,
   onMonthlyWeekNumberChange,
 }: SchedulePatternSelectorProps) {
-  const patternOptions = [
-    { label: "Weekly", value: "weekly" },
-    { label: "Bi-weekly", value: "biweekly" },
-    { label: "Monthly (Day of Month)", value: "monthly_date" },
-    { label: "Monthly (Day of Week)", value: "monthly_day" },
-    { label: "Custom", value: "custom" },
-  ];
-
-  const weekOptions = [
-    { label: "1st", value: 1 },
-    { label: "2nd", value: 2 },
-    { label: "3rd", value: 3 },
-    { label: "4th", value: 4 },
-    { label: "5th", value: 5 },
-  ];
-
-  const allDays = [0, 1, 2, 3, 4, 5, 6]; // Sunday to Saturday
-
   const handleDayToggle = (day: number) => {
     if (daysOfWeek.includes(day)) {
       onDaysOfWeekChange(daysOfWeek.filter((d) => d !== day));
@@ -69,7 +43,7 @@ export default function SchedulePatternSelector({
 
   return (
     <div className={styles.patternSelector}>
-      <div className={styles.field}>
+      <div className={sharedStyles.field}>
         <label htmlFor="patternType">Pattern Type</label>
         <Dropdown
           id="patternType"
@@ -82,10 +56,10 @@ export default function SchedulePatternSelector({
       </div>
 
       {showDaysOfWeek && (
-        <div className={styles.field} style={{ marginTop: "1rem" }}>
+        <div className={sharedStyles.field} style={{ marginTop: "1rem" }}>
           <label>Days of Week</label>
           <div className={styles.dayOfWeekCheckboxes}>
-            {allDays.map((day) => (
+            {allDaysOfWeek.map((day) => (
               <div key={day} className="flex align-items-center gap-2">
                 <Checkbox
                   inputId={`day-${day}`}
@@ -105,7 +79,7 @@ export default function SchedulePatternSelector({
       )}
 
       {showDayOfMonth && (
-        <div className={styles.field} style={{ marginTop: "1rem" }}>
+        <div className={sharedStyles.field} style={{ marginTop: "1rem" }}>
           <label htmlFor="dayOfMonth">Day of Month</label>
           <InputNumber
             id="dayOfMonth"
@@ -122,7 +96,7 @@ export default function SchedulePatternSelector({
       )}
 
       {showMonthlyWeekNumber && (
-        <div className={styles.field} style={{ marginTop: "1rem" }}>
+        <div className={sharedStyles.field} style={{ marginTop: "1rem" }}>
           <label htmlFor="monthlyWeekNumber">Week of Month</label>
           <Dropdown
             id="monthlyWeekNumber"

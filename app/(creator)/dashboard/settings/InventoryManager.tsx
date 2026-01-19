@@ -15,9 +15,9 @@ import {
   deleteTier,
   upsertTierAvailability,
 } from "@/app/actions/inventory";
-import InventoryTable from "./InventoryTable"; // The new table we just made
-import TierFormDialog from "./TierFormDialog"; // The new dialog we just made
-import styles from "./settings.module.css";
+import InventoryTable from "./InventoryTable";
+import TierFormDialog from "./TierFormDialog";
+import sharedStyles from "./shared.module.css";
 
 interface InventoryManagerProps {
   initialTiers: InventoryTier[];
@@ -180,9 +180,9 @@ export default function InventoryManager({
   );
 
   return (
-    <div className={styles.section}>
+    <div className={sharedStyles.section}>
       <Toast ref={toast} />
-      <div className={styles.sectionHeader}>
+      <div className={sharedStyles.sectionHeader}>
         <h2>Inventory Tiers</h2>
         <p>Manage your ad slots and pricing</p>
       </div>

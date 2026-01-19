@@ -20,40 +20,48 @@ This plan implements the UI components and testing strategy for the inventory av
 **Features**:
 
 1. **Schedule Type Toggle**
+
    - Radio buttons or Toggle: `recurring` vs `one_off`
    - Default: `recurring`
 
 2. **Recurring Pattern Configuration**
+
    - Pattern Type Dropdown:
+
      - `weekly` - Weekly on specific days
      - `biweekly` - Every other week
      - `monthly_date` - Specific day of month (e.g., 15th)
      - `monthly_day` - Nth occurrence of day-of-week (e.g., 2nd Tuesday)
      - `custom` - Custom day-of-week combination
-   
+
    - Day-of-Week Selector (Multi-Select Checkboxes):
+
      - Sunday (0), Monday (1), Tuesday (2), Wednesday (3), Thursday (4), Friday (5), Saturday (6)
      - Only shown for: `weekly`, `biweekly`, `monthly_day`, `custom`
-   
+
    - Day of Month Input (Number 1-31):
+
      - Only shown for: `monthly_date`
-   
+
    - Monthly Week Number (Dropdown 1-5):
+
      - Only shown for: `monthly_day`
      - Labels: "1st", "2nd", "3rd", "4th", "5th"
-   
+
    - Date Range Picker:
      - Start Date (required)
      - End Date (optional, null = indefinite)
      - Use PrimeReact Calendar component
 
 3. **One-Off Dates Configuration**
+
    - Multi-Select Date Picker
    - Show list of selected dates with remove buttons
    - Allow adding multiple specific dates
    - Only shown when `schedule_type === 'one_off'`
 
 4. **Visual Preview**
+
    - Show next 10-15 upcoming publication dates based on current configuration
    - Update in real-time as user changes settings
    - Display in a clean list or calendar view
@@ -105,17 +113,20 @@ interface PublicationScheduleSectionProps {
 **Features**:
 
 1. **Schedule Type Selection**
+
    - Radio buttons: `all_dates`, `recurring`, `one_off`
    - Default: `all_dates` (inherit from newsletter schedule)
    - Option: "Inherit from Newsletter Schedule" (checkbox) - if checked, use newsletter schedule
 
 2. **Inherit from Newsletter**
+
    - Checkbox: "Use newsletter publication schedule"
    - When checked, hide all other fields
    - Show preview of newsletter schedule dates
    - Fetch newsletter schedule using `getNewsletterSchedule()`
 
 3. **Custom Availability Configuration**
+
    - Same pattern type options as newsletter schedule
    - Additional field: `is_available` (boolean, default true)
    - Additional field: `capacity` (integer, default 1) - for future multi-booking support
@@ -123,6 +134,7 @@ interface PublicationScheduleSectionProps {
    - One-off dates picker
 
 4. **Preview Section**
+
    - Show next 10-15 available dates for this tier
    - Use `getAvailableDates(tierId, startDate, endDate)` to generate preview
    - Display dates with status indicators (available/unavailable)
@@ -221,11 +233,13 @@ interface TierAvailabilitySectionProps {
 Test cases:
 
 1. **UTC Date Functions**
+
    - `getCanonicalDate()` - Verify UTC interpretation
    - Test with various timezone offsets
    - Verify no off-by-one errors
 
 2. **Pattern Matching**
+
    - `matchesWeekly()` - Test all days of week
    - `matchesBiweekly()` - Test 14-day intervals
    - `matchesMonthlyDate()` - Test day-of-month matching
@@ -241,6 +255,7 @@ Test cases:
 Test cases:
 
 1. **getAvailableDates()**
+
    - Test strict intersection logic
    - Test union of one-off dates
    - Test booking subtraction
@@ -260,6 +275,7 @@ Test cases:
 Test scenarios:
 
 1. **End-to-End Booking Flow**
+
    - Create newsletter with publication schedule
    - Create tier with availability schedule
    - Verify dates show correct status in datepicker
@@ -269,6 +285,7 @@ Test scenarios:
    - Verify unavailable dates are disabled
 
 2. **Schedule Configuration**
+
    - Create recurring weekly schedule
    - Verify preview shows correct dates
    - Switch to one-off dates
@@ -278,6 +295,7 @@ Test scenarios:
    - Verify schedule persists
 
 3. **Tier Inheritance**
+
    - Create newsletter schedule (weekly Mondays)
    - Create tier with "inherit" option
    - Verify tier shows Monday dates as available
@@ -343,17 +361,20 @@ Test scenarios:
 ### Visual Improvements
 
 1. **Schedule Preview**
+
    - Use calendar widget for preview (mini calendar)
    - Color-code dates (green=available, red=booked, grey=unavailable)
    - Show date count summary ("15 dates in next 3 months")
 
 2. **Form Validation**
+
    - Real-time validation feedback
    - Highlight invalid fields
    - Show helpful error messages
    - Prevent saving invalid schedules
 
 3. **Loading States**
+
    - Show loading spinner when fetching schedules
    - Show loading state when generating preview
    - Disable form during save operation
@@ -378,6 +399,7 @@ Test scenarios:
 ### User Documentation
 
 1. **Schedule Configuration Guide**
+
    - Explain each pattern type
    - Examples for common use cases
    - Best practices
@@ -390,6 +412,7 @@ Test scenarios:
 ### Developer Documentation
 
 1. **Code Comments**
+
    - Document complex pattern matching logic
    - Explain intersection/union logic
    - Document date handling (UTC)
@@ -404,12 +427,14 @@ Test scenarios:
 ## Implementation Order
 
 ### Sprint 1: Newsletter Schedule UI
+
 1. Create `PublicationScheduleSection.tsx`
 2. Integrate into `NewsletterSettings.tsx`
 3. Add preview functionality
 4. Test with various patterns
 
 ### Sprint 2: Tier Availability UI
+
 1. Create `TierAvailabilitySection.tsx`
 2. Integrate into `TierFormDialog.tsx`
 3. Add inherit from newsletter option
@@ -417,6 +442,7 @@ Test scenarios:
 5. Test integration with tier creation/editing
 
 ### Sprint 3: Shared Components & Polish
+
 1. Extract `SchedulePatternSelector.tsx`
 2. Extract `SchedulePreview.tsx`
 3. Create `schedule-helpers.ts`
@@ -424,6 +450,7 @@ Test scenarios:
 5. Add UI/UX enhancements
 
 ### Sprint 4: Testing
+
 1. Write unit tests for date-patterns
 2. Write integration tests
 3. Manual testing checklist
@@ -431,6 +458,7 @@ Test scenarios:
 5. Bug fixes
 
 ### Sprint 5: Documentation
+
 1. User documentation
 2. Developer documentation
 3. Code comments

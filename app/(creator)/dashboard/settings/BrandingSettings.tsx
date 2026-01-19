@@ -8,7 +8,7 @@ import { Toast } from "primereact/toast";
 import { updateNewsletterTheme } from "@/app/actions/inventory";
 import { NewsletterTheme } from "@/app/types/inventory";
 import NewsletterMockup from "../../../components/NewsletterMockup";
-import styles from "./settings.module.css";
+import sharedStyles from "./shared.module.css";
 
 interface BrandingSettingsProps {
   initialTheme: NewsletterTheme;
@@ -77,9 +77,9 @@ export default function BrandingSettings({
   };
 
   return (
-    <div className={styles.section}>
+    <div className={sharedStyles.section}>
       <Toast ref={toast} />
-      <div className={styles.sectionHeader}>
+      <div className={sharedStyles.sectionHeader}>
         <h2>Look & Feel</h2>
         <p>Customize the email template used for ad previews</p>
       </div>
@@ -88,7 +88,7 @@ export default function BrandingSettings({
         {/* LEFT: Controls */}
         <div className="col-12 md:col-5">
           <div className="flex flex-column gap-4">
-            <div className={styles.field}>
+            <div className={sharedStyles.field}>
               <label htmlFor="primaryColor">Brand Color</label>
               <div className="flex align-items-center gap-3">
                 <ColorPicker
@@ -103,7 +103,7 @@ export default function BrandingSettings({
               </div>
             </div>
 
-            <div className={styles.field}>
+            <div className={sharedStyles.field}>
               <label>Font Family</label>
               <Dropdown
                 value={theme.font_family}
@@ -113,7 +113,7 @@ export default function BrandingSettings({
               />
             </div>
 
-            <div className={styles.field}>
+            <div className={sharedStyles.field}>
               <label>Ad Layout Style</label>
               <Dropdown
                 value={theme.layout_style}
