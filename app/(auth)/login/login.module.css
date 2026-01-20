@@ -1,0 +1,235 @@
+/* Login Page Layout */
+.container {
+    display: flex;
+    min-height: 100vh;
+    width: 100%;
+    background-color: var(--surface-ground);
+    font-family: var(--font-body);
+    overflow: hidden;
+}
+
+/* Split Layout - Left Side (Brand/Visual) */
+.brandSection {
+    display: none;
+    flex: 1;
+    background: linear-gradient(135deg, var(--primary-300) 0%, var(--primary-color) 100%);
+    position: relative;
+    overflow: hidden;
+    color: white;
+    padding: 4rem;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.brandPattern {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image:
+        radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.1) 0%, transparent 20%),
+        radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.1) 0%, transparent 20%);
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.brandContent {
+    position: relative;
+    z-index: 10;
+    max-width: 480px;
+}
+
+.logo {
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.brandTitle {
+    font-size: 3.5rem;
+    font-weight: 700;
+    line-height: 1.1;
+    margin-bottom: 1.5rem;
+    letter-spacing: -0.03em;
+}
+
+.brandDescription {
+    font-size: 1.25rem;
+    line-height: 1.6;
+    opacity: 0.9;
+    font-weight: 400;
+}
+
+/* Split Layout - Right Side (Form) */
+.formSection {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background: var(--surface-ground);
+    position: relative;
+}
+
+.formContainer {
+    width: 100%;
+    max-width: 440px;
+    animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.header {
+    margin-bottom: 2.5rem;
+    text-align: center;
+}
+
+.title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--color-text-heading);
+    margin: 0 0 0.75rem 0;
+    letter-spacing: -0.02em;
+}
+
+.subtitle {
+    color: var(--color-text-body);
+    font-size: 1rem;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.inputGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-text-heading);
+}
+
+.labelRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.forgotPassword {
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.w-full {
+    width: 100%;
+}
+
+/* Customizing PrimeReact inputs for this page specifically if needed, 
+   but globals.css handles most. We just add spacing/layout here. */
+
+.submitButton {
+    margin-top: 1rem;
+    height: 50px;
+    font-size: 1rem;
+    width: 100%;
+}
+
+.createAccountButton {
+    height: 50px;
+    width: 100%;
+}
+
+.message {
+    width: 100%;
+    margin-bottom: 1.5rem;
+    border-radius: var(--radius);
+}
+
+.divider {
+    margin: 2rem 0;
+    position: relative;
+    text-align: center;
+}
+
+.divider::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--surface-border);
+}
+
+.passwordWrapper {
+    width: 100%;
+}
+
+.passwordWrapper :global(.p-password) {
+    width: 100%;
+}
+
+.passwordWrapper :global(.p-password-input) {
+    width: 100%;
+}
+
+.dividerText {
+    position: relative;
+    background: var(--surface-ground);
+    padding: 0 1rem;
+    color: var(--text-color-secondary);
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+}
+
+.footer {
+    margin-top: 2rem;
+    text-align: center;
+    font-size: 0.875rem;
+    color: var(--color-text-body);
+}
+
+.link {
+    color: var(--primary-color);
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.link:hover {
+    color: var(--primary-700);
+    text-decoration: underline;
+}
+
+/* Responsive Styles */
+@media (min-width: 1024px) {
+    .brandSection {
+        display: flex;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
