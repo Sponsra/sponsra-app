@@ -15,6 +15,13 @@ export async function getNewsletterBySlug(slug: string) {
     return null;
   }
 
+  // Fetch the owner's profile to check Stripe status
+  const { data: ownerProfile } = await supabase
+    .from("profiles")
+    .select("stripe_account_id")
+    .eq("id", newsletter.owner_id)
+    .single();
+
   // Fetch inventory tiers separately for more reliability
   // Using .select() with explicit columns ensures RLS policies are respected
   const { data: tiers, error: tiersError } = await supabase
@@ -31,11 +38,13 @@ export async function getNewsletterBySlug(slug: string) {
     return {
       ...newsletter,
       inventory_tiers: [],
+      owner_profile: ownerProfile,
     };
   }
 
   return {
     ...newsletter,
     inventory_tiers: tiers || [],
+    owner_profile: ownerProfile,
   };
 }

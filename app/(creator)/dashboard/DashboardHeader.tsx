@@ -11,17 +11,21 @@ interface DashboardHeaderProps {
   newsletterName: string;
   newsletterSlug: string;
   tiers: InventoryTier[];
+  isStripeConnected: boolean;
 }
 
 export default function DashboardHeader({
   newsletterName,
   newsletterSlug,
   tiers,
+  isStripeConnected,
 }: DashboardHeaderProps) {
   const [showShare, setShowShare] = useState(false);
   const toast = useRef<Toast>(null);
 
   const copyGenericLink = async () => {
+    if (!isStripeConnected) return; // double check
+
     const baseUrl =
       typeof window !== "undefined"
         ? `${window.location.origin}/${newsletterSlug}/ad`
@@ -59,16 +63,18 @@ export default function DashboardHeader({
           onClick={copyGenericLink}
           className="modern-button"
           severity="secondary"
-          tooltip="Copy a standard booking link"
-          tooltipOptions={{ position: "bottom" }}
+          disabled={!isStripeConnected}
+          tooltip={!isStripeConnected ? "You must connect Stripe to accept payments before sharing your link." : "Copy a standard booking link"}
+          tooltipOptions={{ position: "bottom", showOnDisabled: true }}
         />
         <Button
           label="Share Custom Link"
           icon="pi pi-link"
           onClick={() => setShowShare(true)}
           className="modern-button"
-          tooltip="Create a personalized booking link"
-          tooltipOptions={{ position: "bottom" }}
+          disabled={!isStripeConnected}
+          tooltip={!isStripeConnected ? "You must connect Stripe to accept payments before sharing your link." : "Create a personalized booking link"}
+          tooltipOptions={{ position: "bottom", showOnDisabled: true }}
         />
         <ShareLinkDialog
           visible={showShare}

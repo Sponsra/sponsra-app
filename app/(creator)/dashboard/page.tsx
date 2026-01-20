@@ -200,6 +200,7 @@ export default async function Dashboard() {
           newsletterName={newsletter?.name || "Creator"}
           newsletterSlug={newsletter?.slug || ""}
           tiers={tiers}
+          isStripeConnected={isStripeConnected}
         />
 
         {/* Row 1: The Pulse */}

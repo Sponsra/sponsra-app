@@ -14,6 +14,10 @@ export default async function AdBookingPage({ params }: PageProps) {
 
   if (!newsletter) notFound();
 
+  // Security Check: If the owner hasn't connected Stripe, disable public booking.
+  // This prevents users from accessing broken payment flows via direct URL guessing.
+  const isStripeConnected = !!(newsletter as any).owner_profile?.stripe_account_id;
+
   const adTiers: InventoryTierPublic[] = (
     newsletter.inventory_tiers || []
   ).filter((t: InventoryTierPublic) => t.type === "ad" && t.is_active);
@@ -23,6 +27,22 @@ export default async function AdBookingPage({ params }: PageProps) {
     font_family: "sans",
     layout_style: "minimal",
   };
+
+  if (!isStripeConnected) {
+    return (
+      <div className={styles.container}>
+        <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8">
+          <div className="bg-slate-100 p-6 rounded-full mb-6">
+            <i className="pi pi-lock text-4xl text-slate-400"></i>
+          </div>
+          <h1 className="text-2xl font-bold text-slate-800 mb-2">Bookings Currently Unavailable</h1>
+          <p className="text-slate-600 max-w-md">
+            {newsletter.name} is not accepting bookings at the moment. Please check back later.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.container}>
