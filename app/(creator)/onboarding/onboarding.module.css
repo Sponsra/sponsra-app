@@ -1,0 +1,144 @@
+/* app/(creator)/onboarding/onboarding.module.css */
+
+.container {
+    display: flex;
+    min-height: 100vh;
+    background-color: #f8fafc;
+    /* neutral-50 */
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+}
+
+.card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    width: 100%;
+    max-width: 600px;
+    padding: 2.5rem;
+    animation: slideUp 0.4s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+}
+
+.title {
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: #0f172a;
+    /* slate-900 */
+    margin-bottom: 0.75rem;
+    letter-spacing: -0.025em;
+}
+
+.subtitle {
+    color: #64748b;
+    /* slate-500 */
+    font-size: 1.1rem;
+    line-height: 1.5;
+}
+
+.stepsIndicator {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+}
+
+.stepDot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #e2e8f0;
+    /* slate-200 */
+    transition: all 0.3s ease;
+}
+
+.stepDotActive {
+    background-color: #6366f1;
+    /* indigo-500 */
+    transform: scale(1.2);
+}
+
+.stepDotCompleted {
+    background-color: #6366f1;
+}
+
+.formContent {
+    margin-bottom: 2rem;
+}
+
+.label {
+    display: block;
+    font-weight: 500;
+    color: #334155;
+    /* slate-700 */
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+}
+
+.inputHelper {
+    font-size: 0.875rem;
+    color: #94a3b8;
+    margin-top: 0.5rem;
+}
+
+.actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid #f1f5f9;
+}
+
+/* Specific elements styles */
+.priceInputWrapper {
+    position: relative;
+}
+
+.currencySymbol {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #64748b;
+}
+
+.tiersGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1rem;
+}
+
+.tierCard {
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.tierCard:hover {
+    border-color: #a5b4fc;
+}
+
+.tierCardSelected {
+    border-color: #6366f1;
+    background-color: #eff6ff;
+}
