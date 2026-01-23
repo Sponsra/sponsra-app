@@ -76,6 +76,27 @@ export async function POST(req: Request) {
         console.log("🎉 Database successfully updated to PAID");
       }
     }
+  } else if (event.type === "account.updated") {
+    const account = event.data.object as Stripe.Account;
+    console.log(`👤 Account updated: ${account.id}`);
+
+    const { error } = await supabaseAdmin
+      .from("profiles")
+      .update({
+        stripe_charges_enabled: account.charges_enabled,
+        stripe_details_submitted: account.details_submitted,
+      })
+      .eq("stripe_account_id", account.id);
+
+    if (error) {
+      console.error("❌ Profile Update Failed:", error);
+      return NextResponse.json(
+        { error: "Database update failed" },
+        { status: 500 }
+      );
+    } else {
+      console.log("✅ Profile updated with latest Stripe status");
+    }
   }
 
   return NextResponse.json({ received: true });

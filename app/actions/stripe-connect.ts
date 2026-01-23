@@ -96,19 +96,15 @@ export async function getStripeStatus(): Promise<StripeStatus> {
 
   const { data } = await supabase
     .from("profiles")
-    .select("stripe_account_id")
+    // Select the cached status columns
+    .select("stripe_account_id, stripe_charges_enabled")
     .eq("id", user.id)
     .single();
 
   if (!data?.stripe_account_id) return "none";
 
-  try {
-    const account = await stripe.accounts.retrieve(data.stripe_account_id);
-    return account.charges_enabled ? "active" : "restricted";
-  } catch (error) {
-    console.error("Stripe Retrieve Error:", error);
-    return "none";
-  }
+  // Use cached value
+  return data.stripe_charges_enabled ? "active" : "restricted";
 }
 
 // 3. Create a Login Link (for existing Express accounts)
