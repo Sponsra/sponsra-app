@@ -4,6 +4,8 @@ import Sidebar from "../Sidebar";
 import AppearanceSettings from "./AppearanceSettings";
 import NewsletterSettings from "./NewsletterSettings";
 import BrandingSettings from "./BrandingSettings";
+import StripeSettings from "./StripeSettings";
+import { getStripeStatus } from "@/app/actions/stripe-connect";
 import sharedStyles from "./shared.module.css";
 import type { NewsletterTheme } from "@/app/types/inventory";
 
@@ -18,6 +20,16 @@ export default async function SettingsPage() {
     .from("newsletters")
     .select("*")
     .eq("owner_id", user.id)
+    .single();
+
+  // Fetch Stripe status
+  const stripeStatus = await getStripeStatus();
+
+  // Fetch Stripe account ID
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("stripe_account_id")
+    .eq("id", user.id)
     .single();
 
   // Default theme fallback
@@ -49,6 +61,12 @@ export default async function SettingsPage() {
           <BrandingSettings
             initialTheme={theme}
             newsletterName={newsletter?.name || "Your Newsletter"}
+          />
+
+          {/* NEW: Stripe Settings */}
+          <StripeSettings
+            stripeStatus={stripeStatus}
+            stripeAccountId={profile?.stripe_account_id || null}
           />
         </div>
       </div>

@@ -86,6 +86,45 @@ const getBaseUrl = () => {
 // 2. Check Status (To show granular status)
 export type StripeStatus = "none" | "restricted" | "active";
 
+// Helper: Sync Stripe account status from API to database
+export async function syncStripeAccountStatus(): Promise<void> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return;
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("stripe_account_id")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile?.stripe_account_id) return;
+
+  try {
+    // Fetch the latest account status from Stripe
+    const account = await stripe.accounts.retrieve(profile.stripe_account_id);
+
+    // Update the cached values in the database
+    await supabase
+      .from("profiles")
+      .update({
+        stripe_charges_enabled: account.charges_enabled,
+        stripe_details_submitted: account.details_submitted,
+      })
+      .eq("id", user.id);
+
+    console.log("✅ Synced Stripe account status:", {
+      charges_enabled: account.charges_enabled,
+      details_submitted: account.details_submitted,
+    });
+  } catch (error) {
+    console.error("❌ Failed to sync Stripe account status:", error);
+  }
+}
+
 export async function getStripeStatus(): Promise<StripeStatus> {
   const supabase = await createClient();
   const {
@@ -103,18 +142,33 @@ export async function getStripeStatus(): Promise<StripeStatus> {
 
   if (!data?.stripe_account_id) return "none";
 
+  // If account exists but charges_enabled is false, sync from Stripe
+  // This handles cases where webhooks were missed or account was set up before webhook handler existed
+  if (!data.stripe_charges_enabled) {
+    await syncStripeAccountStatus();
+
+    // Re-fetch the updated status
+    const { data: updatedData } = await supabase
+      .from("profiles")
+      .select("stripe_charges_enabled")
+      .eq("id", user.id)
+      .single();
+
+    return updatedData?.stripe_charges_enabled ? "active" : "restricted";
+  }
+
   // Use cached value
   return data.stripe_charges_enabled ? "active" : "restricted";
 }
 
 // 3. Create a Login Link (for existing Express accounts)
-export async function createStripeLoginLink() {
+export async function createStripeLoginLink(): Promise<string | null> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) return;
+  if (!user) return null;
 
   const { data } = await supabase
     .from("profiles")
@@ -122,8 +176,8 @@ export async function createStripeLoginLink() {
     .eq("id", user.id)
     .single();
 
-  if (!data?.stripe_account_id) return;
+  if (!data?.stripe_account_id) return null;
 
   const loginLink = await stripe.accounts.createLoginLink(data.stripe_account_id);
-  redirect(loginLink.url);
+  return loginLink.url;
 }
