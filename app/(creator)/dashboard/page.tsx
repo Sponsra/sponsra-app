@@ -40,7 +40,8 @@ export default async function Dashboard() {
     .single();
 
   // 3. Check Stripe Status (for the Warning Banner)
-  const isStripeConnected = await getStripeStatus();
+  const stripeStatus = await getStripeStatus();
+  const isStripeActive = stripeStatus === "active";
 
   const tiers: InventoryTier[] = newsletter?.inventory_tiers || [];
   const bookings: Booking[] = newsletter?.bookings || [];
@@ -73,8 +74,6 @@ export default async function Dashboard() {
   );
   const next30DaysEnd = new Date(now);
   next30DaysEnd.setDate(next30DaysEnd.getDate() + 30);
-  const twoDaysAgo = new Date(now);
-  twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
 
   // Helper to get tier price
   const getTierPrice = (booking: Booking) => {
@@ -129,17 +128,8 @@ export default async function Dashboard() {
   const occupancyPercentage =
     totalSlots > 0 ? (filledSlots / totalSlots) * 100 : 0;
 
-  // 5. Requires Attention
-  const requiresAttention = bookings.filter((b) => {
-    // Status = 'paid' (needs review)
-    if (b.status === "paid") return true;
-    // Status = 'draft' AND created_at < 2 days ago (stale drafts)
-    if (b.status === "draft" && b.created_at) {
-      const createdDate = new Date(b.created_at);
-      return createdDate < twoDaysAgo;
-    }
-    return false;
-  });
+  // 5. Requires Attention (only paid bookings need review)
+  const requiresAttention = bookings.filter((b) => b.status === "paid");
 
   // 6. Up Next (Next 3 approved bookings)
   const upNext = bookings
@@ -160,8 +150,8 @@ export default async function Dashboard() {
     <div className="dashboard-layout">
       <Sidebar />
       <div className="dashboard-content">
-        {/* STRIPE ALERT: If not connected, show big warning */}
-        {!isStripeConnected && (
+        {/* STRIPE ALERT: If not fully active, show granular warning */}
+        {stripeStatus !== "active" && (
           <div className="modern-alert">
             <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
               <i
@@ -177,16 +167,21 @@ export default async function Dashboard() {
                     color: "#9a3412",
                   }}
                 >
-                  Payout Setup Required
+                  {stripeStatus === "none"
+                    ? "Payout Setup Required"
+                    : "Action Required: Stripe Restricted"}
                 </div>
                 <div style={{ fontSize: "0.875rem", color: "#c2410c" }}>
-                  Connect with Stripe to receive sponsorship money. You cannot
-                  accept payments until this is done.
+                  {stripeStatus === "none"
+                    ? "Connect your Stripe account to start accepting sponsorships."
+                    : "Your account is connected but needs attention (e.g. verify bank info) before you can receive payouts."}
                 </div>
               </div>
               <form action={createStripeConnectAccount}>
                 <Button
-                  label="Setup Payouts"
+                  label={
+                    stripeStatus === "none" ? "Setup Payouts" : "Update Stripe"
+                  }
                   severity="warning"
                   icon="pi pi-wallet"
                   className="modern-button"
@@ -200,7 +195,8 @@ export default async function Dashboard() {
           newsletterName={newsletter?.name || "Creator"}
           newsletterSlug={newsletter?.slug || ""}
           tiers={tiers}
-          isStripeConnected={isStripeConnected}
+          isStripeConnected={isStripeActive}
+          stripeStatus={stripeStatus}
         />
 
         {/* Row 1: The Pulse */}

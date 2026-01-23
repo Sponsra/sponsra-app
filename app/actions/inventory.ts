@@ -6,8 +6,7 @@ import { revalidatePath } from "next/cache";
 import {
   TierFormData,
   NewsletterTheme,
-  PublicationSchedule,
-  AvailabilitySchedule,
+  AvailabilityException,
 } from "@/app/types/inventory";
 
 type ActionResponse = {
@@ -71,6 +70,7 @@ export async function upsertTier(data: TierFormData): Promise<ActionResponse> {
     specs_headline_limit: data.specs_headline_limit,
     specs_body_limit: data.specs_body_limit,
     specs_image_ratio: data.specs_image_ratio,
+    available_days: data.available_days || [1, 2, 3, 4, 5], // Default Mon-Fri if not specified
   };
 
   let error;
@@ -100,6 +100,7 @@ export async function upsertTier(data: TierFormData): Promise<ActionResponse> {
   if (error) return { success: false, error: error.message };
 
   revalidatePath("/dashboard/settings");
+  revalidatePath("/dashboard/inventory");
   return { success: true, tierId };
 }
 
@@ -154,9 +155,10 @@ export async function updateNewsletterTheme(
   return { success: true };
 }
 
-// 5. Update Newsletter Publication Schedule
-export async function updateNewsletterSchedule(
-  schedule: PublicationSchedule
+// 5. Toggle Availability Exception (Add/Remove Date)
+export async function toggleAvailabilityException(
+  newsletterId: string,
+  date: string // YYYY-MM-DD
 ): Promise<ActionResponse> {
   const supabase = await createClient();
   const {
@@ -165,169 +167,41 @@ export async function updateNewsletterSchedule(
 
   if (!user) return { success: false, error: "Unauthorized" };
 
-  // Verify ownership
+  // Check ownership
   const { data: newsletter } = await supabase
     .from("newsletters")
     .select("id")
-    .eq("id", schedule.newsletter_id)
+    .eq("id", newsletterId)
     .eq("owner_id", user.id)
     .single();
 
   if (!newsletter) return { success: false, error: "Newsletter not found." };
 
-  const payload = {
-    newsletter_id: schedule.newsletter_id,
-    schedule_type: schedule.schedule_type,
-    pattern_type: schedule.pattern_type,
-    days_of_week: schedule.days_of_week,
-    day_of_month: schedule.day_of_month,
-    monthly_week_number: schedule.monthly_week_number,
-    start_date: schedule.start_date,
-    end_date: schedule.end_date,
-    specific_dates: schedule.specific_dates,
-  };
-
-  let error;
-  if (schedule.id) {
-    // Update existing
-    const res = await supabase
-      .from("newsletter_publication_schedules")
-      .update(payload)
-      .eq("id", schedule.id)
-      .eq("newsletter_id", schedule.newsletter_id);
-    error = res.error;
-  } else {
-    // Insert new (upsert by newsletter_id - one schedule per newsletter)
-    // First, delete any existing schedule for this newsletter
-    await supabase
-      .from("newsletter_publication_schedules")
-      .delete()
-      .eq("newsletter_id", schedule.newsletter_id);
-
-    const res = await supabase
-      .from("newsletter_publication_schedules")
-      .insert(payload);
-    error = res.error;
-  }
-
-  if (error) return { success: false, error: error.message };
-
-  revalidatePath("/dashboard/settings");
-  return { success: true };
-}
-
-// 6. Get Newsletter Publication Schedule
-export async function getNewsletterSchedule(
-  newsletterId: string
-): Promise<PublicationSchedule | null> {
-  const supabase = await createClient();
-
-  const { data, error } = await supabase
-    .from("newsletter_publication_schedules")
-    .select("*")
+  // Check if it exists
+  const { data: existing } = await supabase
+    .from("availability_exceptions")
+    .select("id")
     .eq("newsletter_id", newsletterId)
+    .eq("date", date)
     .single();
-
-  if (error) {
-    console.log("[getNewsletterSchedule] Error fetching schedule:", error);
-    return null;
-  }
-
-  if (!data) {
-    console.log(
-      "[getNewsletterSchedule] No schedule found for newsletter:",
-      newsletterId
-    );
-    return null;
-  }
-
-  const schedule = {
-    id: data.id,
-    newsletter_id: data.newsletter_id,
-    schedule_type: data.schedule_type,
-    pattern_type: data.pattern_type,
-    days_of_week: data.days_of_week,
-    day_of_month: data.day_of_month,
-    monthly_week_number: data.monthly_week_number,
-    start_date: data.start_date,
-    end_date: data.end_date,
-    specific_dates: data.specific_dates,
-    created_at: data.created_at,
-  };
-
-  console.log("[getNewsletterSchedule] Retrieved schedule:", {
-    newsletterId,
-    schedule_type: schedule.schedule_type,
-    pattern_type: schedule.pattern_type,
-    days_of_week: schedule.days_of_week,
-    day_of_month: schedule.day_of_month,
-    monthly_week_number: schedule.monthly_week_number,
-    start_date: schedule.start_date,
-    end_date: schedule.end_date,
-    specific_dates: schedule.specific_dates,
-    rawData: data,
-  });
-
-  return schedule;
-}
-
-// 7. Upsert Tier Availability Schedule
-export async function upsertTierAvailability(
-  tierId: string,
-  schedule: AvailabilitySchedule
-): Promise<ActionResponse> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) return { success: false, error: "Unauthorized" };
-
-  // Verify ownership
-  const { data: tier } = await supabase
-    .from("inventory_tiers")
-    .select("newsletter_id, newsletters!inner(owner_id)")
-    .eq("id", tierId)
-    .single();
-
-  if (!tier || (tier.newsletters as any).owner_id !== user.id) {
-    return { success: false, error: "Tier not found or unauthorized." };
-  }
-
-  const payload = {
-    tier_id: tierId,
-    schedule_type: schedule.schedule_type,
-    pattern_type: schedule.pattern_type,
-    days_of_week: schedule.days_of_week,
-    day_of_month: schedule.day_of_month,
-    monthly_week_number: schedule.monthly_week_number,
-    start_date: schedule.start_date,
-    end_date: schedule.end_date,
-    specific_dates: schedule.specific_dates,
-    is_available: schedule.is_available ?? true,
-    capacity: schedule.capacity ?? 1,
-  };
 
   let error;
-  if (schedule.id) {
-    // Update existing
+  if (existing) {
+    // Remove exception (Limit opened)
     const res = await supabase
-      .from("tier_availability_schedules")
-      .update(payload)
-      .eq("id", schedule.id)
-      .eq("tier_id", tierId);
+      .from("availability_exceptions")
+      .delete()
+      .eq("id", existing.id);
     error = res.error;
   } else {
-    // Insert new (upsert by tier_id - one schedule per tier)
-    // First, delete any existing schedule for this tier
-    await supabase
-      .from("tier_availability_schedules")
-      .delete()
-      .eq("tier_id", tierId);
-
+    // Add exception (Limit closed)
     const res = await supabase
-      .from("tier_availability_schedules")
-      .insert(payload);
+      .from("availability_exceptions")
+      .insert({
+        newsletter_id: newsletterId,
+        date: date,
+        description: "Manually blocked",
+      });
     error = res.error;
   }
 
@@ -337,58 +211,21 @@ export async function upsertTierAvailability(
   return { success: true };
 }
 
-// 8. Get Tier Availability Schedule
-export async function getTierAvailability(
-  tierId: string
-): Promise<AvailabilitySchedule | null> {
+// 6. Get Availability Exceptions
+export async function getAvailabilityExceptions(
+  newsletterId: string
+): Promise<AvailabilityException[]> {
   const supabase = await createClient();
 
   const { data, error } = await supabase
-    .from("tier_availability_schedules")
+    .from("availability_exceptions")
     .select("*")
-    .eq("tier_id", tierId)
-    .single();
+    .eq("newsletter_id", newsletterId);
 
   if (error) {
-    console.log("[getTierAvailability] Error fetching schedule:", error);
-    return null;
+    console.error("Error fetching exceptions:", error);
+    return [];
   }
 
-  if (!data) {
-    console.log("[getTierAvailability] No schedule found for tier:", tierId);
-    return null;
-  }
-
-  const schedule = {
-    id: data.id,
-    tier_id: data.tier_id,
-    schedule_type: data.schedule_type,
-    pattern_type: data.pattern_type,
-    days_of_week: data.days_of_week,
-    day_of_month: data.day_of_month,
-    monthly_week_number: data.monthly_week_number,
-    start_date: data.start_date,
-    end_date: data.end_date,
-    specific_dates: data.specific_dates,
-    is_available: data.is_available,
-    capacity: data.capacity,
-    created_at: data.created_at,
-  };
-
-  console.log("[getTierAvailability] Retrieved schedule:", {
-    tierId,
-    schedule_type: schedule.schedule_type,
-    pattern_type: schedule.pattern_type,
-    days_of_week: schedule.days_of_week,
-    day_of_month: schedule.day_of_month,
-    monthly_week_number: schedule.monthly_week_number,
-    start_date: schedule.start_date,
-    end_date: schedule.end_date,
-    specific_dates: schedule.specific_dates,
-    is_available: schedule.is_available,
-    capacity: schedule.capacity,
-    rawData: data,
-  });
-
-  return schedule;
+  return data || [];
 }

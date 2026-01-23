@@ -144,13 +144,6 @@ export default function RequiresAttention({
             Needs Review
           </span>
         );
-      case "draft":
-        return (
-          <span className={classes.badgeSecondary}>
-            <i className="pi pi-clock"></i>
-            Stale Draft
-          </span>
-        );
       default:
         return null;
     }
@@ -315,9 +308,9 @@ export default function RequiresAttention({
           </div>
         }
         visible={!!selectedBooking}
-        style={{ 
-          width: "90vw", 
-          maxWidth: "50vw", 
+        style={{
+          width: "90vw",
+          maxWidth: "50vw",
           minWidth: "320px",
           maxHeight: "90vh"
         }}
@@ -413,8 +406,8 @@ export default function RequiresAttention({
                       fontSize: "0.7rem",
                       color:
                         (selectedBooking.ad_headline?.length || 0) >
-                        (getInventoryTier(selectedBooking)
-                          ?.specs_headline_limit || Infinity)
+                          (getInventoryTier(selectedBooking)
+                            ?.specs_headline_limit || Infinity)
                           ? "var(--red-500)"
                           : "var(--color-text-body)",
                     }}
@@ -425,8 +418,8 @@ export default function RequiresAttention({
                     {(selectedBooking.ad_headline?.length || 0) >
                       (getInventoryTier(selectedBooking)
                         ?.specs_headline_limit || Infinity) && (
-                      <i className="pi pi-exclamation-triangle ml-1" />
-                    )}
+                        <i className="pi pi-exclamation-triangle ml-1" />
+                      )}
                   </span>
                 )}
               </div>
@@ -443,24 +436,24 @@ export default function RequiresAttention({
               {(selectedBooking.ad_headline?.length || 0) >
                 (getInventoryTier(selectedBooking)?.specs_headline_limit ||
                   Infinity) && (
-                <div
-                  style={{
-                    marginTop: "0.5rem",
-                    padding: "0.5rem",
-                    background: "rgba(239, 68, 68, 0.1)",
-                    borderRadius: "4px",
-                    color: "var(--red-600)",
-                    fontSize: "0.875rem",
-                  }}
-                >
-                  <i className="pi pi-exclamation-triangle mr-1" />
-                  Headline exceeds limit by{" "}
-                  {(selectedBooking.ad_headline?.length || 0) -
-                    (getInventoryTier(selectedBooking)?.specs_headline_limit ||
-                      0)}{" "}
-                  characters
-                </div>
-              )}
+                  <div
+                    style={{
+                      marginTop: "0.5rem",
+                      padding: "0.5rem",
+                      background: "rgba(239, 68, 68, 0.1)",
+                      borderRadius: "4px",
+                      color: "var(--red-600)",
+                      fontSize: "0.875rem",
+                    }}
+                  >
+                    <i className="pi pi-exclamation-triangle mr-1" />
+                    Headline exceeds limit by{" "}
+                    {(selectedBooking.ad_headline?.length || 0) -
+                      (getInventoryTier(selectedBooking)?.specs_headline_limit ||
+                        0)}{" "}
+                    characters
+                  </div>
+                )}
             </div>
 
             <div
@@ -487,8 +480,8 @@ export default function RequiresAttention({
                       fontSize: "0.7rem",
                       color:
                         (selectedBooking.ad_body?.length || 0) >
-                        (getInventoryTier(selectedBooking)?.specs_body_limit ||
-                          Infinity)
+                          (getInventoryTier(selectedBooking)?.specs_body_limit ||
+                            Infinity)
                           ? "var(--red-500)"
                           : "var(--color-text-body)",
                     }}
@@ -498,8 +491,8 @@ export default function RequiresAttention({
                     {(selectedBooking.ad_body?.length || 0) >
                       (getInventoryTier(selectedBooking)?.specs_body_limit ||
                         Infinity) && (
-                      <i className="pi pi-exclamation-triangle ml-1" />
-                    )}
+                        <i className="pi pi-exclamation-triangle ml-1" />
+                      )}
                   </span>
                 )}
               </div>
@@ -517,24 +510,24 @@ export default function RequiresAttention({
               {(selectedBooking.ad_body?.length || 0) >
                 (getInventoryTier(selectedBooking)?.specs_body_limit ||
                   Infinity) && (
-                <div
-                  style={{
-                    marginTop: "0.5rem",
-                    padding: "0.5rem",
-                    background: "rgba(239, 68, 68, 0.1)",
-                    borderRadius: "4px",
-                    color: "var(--red-600)",
-                    fontSize: "0.875rem",
-                  }}
-                >
-                  <i className="pi pi-exclamation-triangle mr-1" />
-                  Body text exceeds limit by{" "}
-                  {(selectedBooking.ad_body?.length || 0) -
-                    (getInventoryTier(selectedBooking)?.specs_body_limit ||
-                      0)}{" "}
-                  characters
-                </div>
-              )}
+                  <div
+                    style={{
+                      marginTop: "0.5rem",
+                      padding: "0.5rem",
+                      background: "rgba(239, 68, 68, 0.1)",
+                      borderRadius: "4px",
+                      color: "var(--red-600)",
+                      fontSize: "0.875rem",
+                    }}
+                  >
+                    <i className="pi pi-exclamation-triangle mr-1" />
+                    Body text exceeds limit by{" "}
+                    {(selectedBooking.ad_body?.length || 0) -
+                      (getInventoryTier(selectedBooking)?.specs_body_limit ||
+                        0)}{" "}
+                    characters
+                  </div>
+                )}
             </div>
 
             <div
