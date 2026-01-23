@@ -5,7 +5,6 @@ import { Button } from "primereact/button";
 import { Toast } from "primereact/toast";
 import ShareLinkDialog from "./ShareLinkDialog";
 import type { InventoryTier } from "@/app/types/inventory";
-import { createStripeLoginLink } from "@/app/actions/stripe-connect";
 import classes from "./DashboardHeader.module.css";
 
 interface DashboardHeaderProps {
@@ -60,19 +59,6 @@ export default function DashboardHeader({
       </div>
 
       <div className={classes.actions}>
-        {stripeStatus !== "none" && (
-          <form action={createStripeLoginLink}>
-            <Button
-              label="Stripe Dashboard"
-              icon="pi pi-external-link"
-              className="modern-button"
-              severity="secondary"
-              tooltip="Manage your Stripe account and bank details"
-              tooltipOptions={{ position: "bottom" }}
-              type="submit"
-            />
-          </form>
-        )}
         <Button
           label="Share Link"
           icon="pi pi-link"

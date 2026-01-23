@@ -11,7 +11,6 @@ import {
 import { Calendar } from "primereact/calendar";
 import type { CalendarDateTemplateEvent } from "primereact/calendar";
 import { Button } from "primereact/button";
-import { Tooltip } from "primereact/tooltip";
 import { createBooking, getAvailableDates } from "@/app/actions/bookings";
 import {
   InventoryTierPublic,
@@ -91,58 +90,71 @@ function StepSelectDateProvider({
 
   // Fetch availability dates whenever the user picks a tier
   useEffect(() => {
-    if (selectedTier) {
-      setLoading(true);
-      getAvailableDates(selectedTier.id, dateRange.start, dateRange.end)
-        .then((availability: DateAvailabilityStatus[]) => {
-          // Build availability map
-          const map = new Map<string, DateAvailabilityStatus>();
-          availability.forEach((item) => {
-            map.set(item.date, item);
-          });
-
-          // Build disabled dates array (booked + unavailable)
-          const disabled: Date[] = [];
-          availability.forEach((item) => {
-            if (item.status !== "available") {
-              disabled.push(toDateFromString(item.date));
-            }
-          });
-
-          // Note: Dates outside the range will be handled by maxDate and dateTemplate
-          // They will be styled as unavailable and prevented from selection
-
-          setAvailabilityMap(map);
-          setDisabledDates(disabled);
-        })
-        .catch((error) => {
-          setAvailabilityMap(new Map());
-          setDisabledDates([]);
-        })
-        .finally(() => setLoading(false));
-    } else {
+    if (!selectedTier) {
       setAvailabilityMap(new Map());
       setDisabledDates([]);
+      return;
     }
-  }, [selectedTier, dateRange]);
+
+    const fetchAvailability = async () => {
+      try {
+        const availability = await getAvailableDates(
+          selectedTier.id,
+          dateRange.start,
+          dateRange.end
+        );
+
+        // Build availability map
+        const map = new Map<string, DateAvailabilityStatus>();
+        availability.forEach((item) => {
+          map.set(item.date, item);
+        });
+
+        // Build disabled dates array (booked + unavailable)
+        const disabled: Date[] = [];
+        availability.forEach((item) => {
+          if (item.status !== "available") {
+            disabled.push(toDateFromString(item.date));
+          }
+        });
+
+        setAvailabilityMap(map);
+        setDisabledDates(disabled);
+
+        // If the currently selected date is no longer available, clear it
+        if (date) {
+          const dateStr = formatDateString(date);
+          const status = map.get(dateStr);
+          if (!status || status.status !== "available") {
+            setDate(null);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching availability:", error);
+        setAvailabilityMap(new Map());
+        setDisabledDates([]);
+      }
+    };
+
+    // Initial fetch
+    setLoading(true);
+    fetchAvailability().finally(() => setLoading(false));
+
+    // Poll every 10 seconds to catch real-time bookings
+    const pollInterval = setInterval(fetchAvailability, 10000);
+
+    return () => clearInterval(pollInterval);
+  }, [selectedTier, dateRange, date]);
 
   const handleSubmit = async () => {
     if (!date || !selectedTier) return;
 
-    // Validate date is within calculated range
+    // Validate date is within calculated range (safety check)
     const dateStr = formatDateString(date);
     if (dateStr < dateRange.start || dateStr > dateRange.end) {
       alert(
         "This date is outside the available booking range. Please select a date within the next 3 months."
       );
-      setDate(null);
-      return;
-    }
-
-    // Validate date is actually available
-    const status = availabilityMap.get(dateStr);
-    if (!status || status.status !== "available") {
-      alert("This date is not available. Please select an available date.");
       setDate(null);
       return;
     }
@@ -154,28 +166,13 @@ function StepSelectDateProvider({
     if (result.success && result.bookingId) {
       onContinue(selectedTier, date, result.bookingId);
     } else {
+      // Show error - the polling mechanism will refresh availability automatically
       alert(
-        result.message || "This date was just taken. Please choose another."
+        result.message || "Unable to book this date. Please select another."
       );
-
-      // Refresh availability
-      const availability = await getAvailableDates(
-        selectedTier.id,
-        dateRange.start,
-        dateRange.end
-      );
-      const map = new Map<string, DateAvailabilityStatus>();
-      const disabled: Date[] = [];
-      availability.forEach((item) => {
-        map.set(item.date, item);
-        if (item.status !== "available") {
-          disabled.push(toDateFromString(item.date));
-        }
-      });
-      setAvailabilityMap(map);
-      setDisabledDates(disabled);
       setDate(null);
     }
+
     setLoading(false);
   };
 
@@ -332,7 +329,7 @@ export function StepSelectDateRight() {
     return toDateFromString(dateRange.end);
   }, [dateRange.end]);
 
-  // Custom date template to style dates based on availability status
+  // Custom date template to style available and booked dates
   const dateTemplate = (event: CalendarDateTemplateEvent) => {
     // Build date string from event properties
     const year = event.year;
@@ -341,78 +338,22 @@ export function StepSelectDateRight() {
     const dateStr = `${year}-${month}-${day}`;
     const status = availabilityMap.get(dateStr);
 
-    // Check if date is outside the calculated range
-    const isOutsideRange = dateStr < dateRange.start || dateStr > dateRange.end;
-
-    // If date is outside range or not in map, mark as unavailable
-    if (!status || isOutsideRange) {
-      return (
-        <span
-          className={styles.unavailableDate}
-          title={isOutsideRange ? "Date range not calculated" : "Unavailable"}
-          data-pr-tooltip={
-            isOutsideRange ? "Date range not calculated" : "Unavailable"
-          }
-          data-pr-position="top"
-        >
-          {event.day}
-        </span>
-      );
+    if (status && status.status === "available") {
+      return <span className={styles.availableDate}>{event.day}</span>;
     }
 
-    let className = "";
-    let title = "";
-
-    switch (status.status) {
-      case "available":
-        className = styles.availableDate;
-        title = "Available";
-        break;
-      case "booked":
-        className = styles.bookedDate;
-        title = status.reason || "Sold Out";
-        break;
-      case "unavailable":
-        className = styles.unavailableDate;
-        title = status.reason || "Unavailable";
-        break;
+    if (status && status.status === "booked") {
+      return <span className={styles.bookedDate}>{event.day}</span>;
     }
 
-    return (
-      <span
-        className={className}
-        title={title}
-        data-pr-tooltip={title}
-        data-pr-position="top"
-      >
-        {event.day}
-      </span>
-    );
+    return event.day;
   };
 
   return (
     <div className={styles.calendarContainer}>
-      <Tooltip target=".p-datepicker table td span" />
       <Calendar
         value={date}
-        onChange={(e) => {
-          const selectedDate = e.value as Date;
-          const selectedDateStr = formatDateString(selectedDate);
-
-          // Prevent selecting dates outside the calculated range
-          if (
-            selectedDateStr < dateRange.start ||
-            selectedDateStr > dateRange.end
-          ) {
-            return;
-          }
-
-          // Also check if date is available
-          const status = availabilityMap.get(selectedDateStr);
-          if (status && status.status === "available") {
-            setDate(selectedDate);
-          }
-        }}
+        onChange={(e) => setDate(e.value as Date)}
         inline
         minDate={new Date()}
         maxDate={maxDate}

@@ -2,7 +2,7 @@
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, unstable_noStore } from "next/cache";
 import { createCheckoutSession } from "./stripe";
 import {
   DateAvailabilityStatus,
@@ -17,6 +17,7 @@ export async function getAvailableDates(
   startDate: string,
   endDate: string
 ): Promise<DateAvailabilityStatus[]> {
+  unstable_noStore(); // Prevent caching
   const supabase = await createClient();
 
   // 1. Fetch Tier Info (for available_days + newsletter_id)
@@ -50,7 +51,7 @@ export async function getAvailableDates(
   // Exclude rejected bookings
   const { data: bookings, error: bookingsError } = await supabase
     .from("bookings")
-    .select("target_date")
+    .select("target_date, status")
     .eq("tier_id", tierId)
     .neq("status", "rejected")
     .gte("target_date", startDate)
@@ -62,6 +63,7 @@ export async function getAvailableDates(
   }
 
   const bookedMap = new Set(bookings?.map((b) => b.target_date) || []);
+
   const availableDays = new Set(tier.available_days || [1, 2, 3, 4, 5]); // Default Mon-Fri
 
   // 4. Build Result
