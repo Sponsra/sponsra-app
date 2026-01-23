@@ -9,6 +9,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 });
 
 export async function POST(req: Request) {
+  console.log("⚡️ Stripe Webhook received!");
   // 2. SAFETY CHECK: Ensure keys are loaded
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
     console.error("❌ CRITICAL: SUPABASE_SERVICE_ROLE_KEY is missing.");
@@ -52,6 +53,7 @@ export async function POST(req: Request) {
   }
 
   // 3. Handle the event
+  console.log(`🔔 Event Type: ${event.type}`);
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
     const bookingId = session.metadata?.booking_id;

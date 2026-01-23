@@ -14,6 +14,7 @@ export interface InventoryTier {
   specs_headline_limit: number;
   specs_body_limit: number;
   specs_image_ratio: "any" | "1:1" | "1.91:1" | "no_image";
+  available_days?: number[]; // 0=Sunday, 6=Saturday
 }
 // Tier data as returned from queries (public-facing, includes specs for validation)
 export interface InventoryTierPublic {
@@ -26,6 +27,7 @@ export interface InventoryTierPublic {
   specs_headline_limit: number;
   specs_body_limit: number;
   specs_image_ratio: "any" | "1:1" | "1.91:1" | "no_image";
+  available_days?: number[];
 }
 
 // Used for forms (ID is optional for new items)
@@ -39,6 +41,7 @@ export interface TierFormData {
   specs_headline_limit: number;
   specs_body_limit: number;
   specs_image_ratio: "any" | "1:1" | "1.91:1" | "no_image";
+  available_days?: number[];
 }
 
 // Newsletter theme configuration
@@ -48,44 +51,12 @@ export interface NewsletterTheme {
   layout_style: "minimal" | "boxed";
 }
 
-// Schedule type definitions
-export type ScheduleType = "recurring" | "one_off" | "all_dates";
-export type PatternType =
-  | "weekly"
-  | "biweekly"
-  | "monthly_date"
-  | "monthly_day"
-  | "custom";
-
-// Newsletter publication schedule
-export interface PublicationSchedule {
-  id?: string;
+// Availability Exception (Blackout Dates)
+export interface AvailabilityException {
+  id: string;
   newsletter_id: string;
-  schedule_type: ScheduleType;
-  pattern_type?: PatternType | null; // nullable for one_off schedules
-  days_of_week?: number[] | null; // Array of day numbers (0=Sunday, 6=Saturday)
-  day_of_month?: number | null; // For monthly_date patterns (1-31)
-  monthly_week_number?: number | null; // For monthly_day patterns (1-5)
-  start_date: string; // YYYY-MM-DD format
-  end_date?: string | null; // YYYY-MM-DD format, null = indefinite
-  specific_dates?: string[] | null; // For one-off dates (YYYY-MM-DD format)
-  created_at?: string;
-}
-
-// Tier availability schedule
-export interface AvailabilitySchedule {
-  id?: string;
-  tier_id: string;
-  schedule_type: ScheduleType;
-  pattern_type?: PatternType | null; // nullable for one_off and all_dates schedules
-  days_of_week?: number[] | null;
-  day_of_month?: number | null;
-  monthly_week_number?: number | null;
-  start_date?: string | null; // nullable for all_dates
-  end_date?: string | null;
-  specific_dates?: string[] | null;
-  is_available?: boolean; // Can mark dates as explicitly unavailable
-  capacity?: number; // Allows multiple bookings per date (future-proofing)
+  date: string; // YYYY-MM-DD
+  description?: string;
   created_at?: string;
 }
 

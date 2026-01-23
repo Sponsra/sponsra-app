@@ -16,60 +16,83 @@ export async function createStripeConnectAccount() {
   } = await supabase.auth.getUser();
 
   if (!user) return;
-
-  // A. Create an Express Account for this user (if they don't have one)
-  // Ideally, check DB first. If 'stripe_account_id' exists, skip this.
-  const account = await stripe.accounts.create({
-    type: "express",
-    email: user.email,
-    capabilities: {
-      card_payments: { requested: true },
-      transfers: { requested: true },
-    },
-  });
-
-  // B. Save this 'acct_...' ID to your Supabase Profile
-  // This binds the user to this Stripe wallet.
-  await supabase
-    .from("profiles")
-    .update({ stripe_account_id: account.id })
-    .eq("id", user.id);
-
-  // C. Create the "Onboarding Link"
-  // This is the URL where they enter their bank details.
-  // Ensure URLs have proper protocol (http:// or https://)
-  const getBaseUrl = () => {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-    // If it already starts with http:// or https://, use it as-is
-    if (baseUrl.startsWith("http://") || baseUrl.startsWith("https://")) {
-      return baseUrl;
-    }
-    // Otherwise, prepend https:// (or http:// for localhost)
-    return baseUrl.includes("localhost")
-      ? `http://${baseUrl}`
-      : `https://${baseUrl}`;
-  };
-
   const baseUrl = getBaseUrl();
+
+  // A. Check if they already have a Stripe ID in DB
+  console.log("Checking Stripe ID for user:", user.id);
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("stripe_account_id")
+    .eq("id", user.id)
+    .single();
+
+  if (profileError) {
+    console.warn("Profile fetch error (could be no profile yet):", profileError.message);
+  }
+
+  let stripeAccountId = profile?.stripe_account_id;
+  console.log("Found stripeAccountId in DB:", stripeAccountId);
+
+  if (!stripeAccountId) {
+    console.log("No Stripe account found. Creating a new one...");
+    // B. Create an Express Account for this user if they don't have one
+    const account = await stripe.accounts.create({
+      type: "express",
+      email: user.email || undefined,
+      capabilities: {
+        card_payments: { requested: true },
+        transfers: { requested: true },
+      },
+    });
+    stripeAccountId = account.id;
+    console.log("New Stripe account created:", stripeAccountId);
+
+    // C. Save this 'acct_...' ID to your Supabase Profile
+    const { error: updateError } = await supabase
+      .from("profiles")
+      .update({ stripe_account_id: stripeAccountId })
+      .eq("id", user.id);
+
+    if (updateError) {
+      console.error("Failed to update profile with Stripe ID:", updateError.message);
+    }
+  } else {
+    console.log("Reusing existing Stripe account:", stripeAccountId);
+  }
+
+  // D. Create the "Onboarding Link" (works for new or incomplete accounts)
   const accountLink = await stripe.accountLinks.create({
-    account: account.id,
-    refresh_url: `${baseUrl}/dashboard`, // If they fail/reload
-    return_url: `${baseUrl}/dashboard`, // If they succeed
+    account: stripeAccountId,
+    refresh_url: `${baseUrl}/dashboard`,
+    return_url: `${baseUrl}/dashboard`,
     type: "account_onboarding",
   });
 
-  // D. Send them to Stripe
+  // E. Send them to Stripe
   redirect(accountLink.url);
 }
 
-// 2. Check Status (To show "Connected" or "Not Connected" badge)
-export async function getStripeStatus() {
+// Helper for protocol handling
+const getBaseUrl = () => {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+  if (baseUrl.startsWith("http://") || baseUrl.startsWith("https://")) {
+    return baseUrl;
+  }
+  return baseUrl.includes("localhost")
+    ? `http://${baseUrl}`
+    : `https://${baseUrl}`;
+};
+
+// 2. Check Status (To show granular status)
+export type StripeStatus = "none" | "restricted" | "active";
+
+export async function getStripeStatus(): Promise<StripeStatus> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) return false;
+  if (!user) return "none";
 
   const { data } = await supabase
     .from("profiles")
@@ -77,9 +100,34 @@ export async function getStripeStatus() {
     .eq("id", user.id)
     .single();
 
-  if (!data?.stripe_account_id) return false;
+  if (!data?.stripe_account_id) return "none";
 
-  // Optional: Check with Stripe if they actually finished onboarding
-  const account = await stripe.accounts.retrieve(data.stripe_account_id);
-  return account.charges_enabled;
+  try {
+    const account = await stripe.accounts.retrieve(data.stripe_account_id);
+    return account.charges_enabled ? "active" : "restricted";
+  } catch (error) {
+    console.error("Stripe Retrieve Error:", error);
+    return "none";
+  }
+}
+
+// 3. Create a Login Link (for existing Express accounts)
+export async function createStripeLoginLink() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return;
+
+  const { data } = await supabase
+    .from("profiles")
+    .select("stripe_account_id")
+    .eq("id", user.id)
+    .single();
+
+  if (!data?.stripe_account_id) return;
+
+  const loginLink = await stripe.accounts.createLoginLink(data.stripe_account_id);
+  redirect(loginLink.url);
 }

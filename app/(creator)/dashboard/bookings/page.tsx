@@ -1,7 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import Sidebar from "../Sidebar";
-import BookingsTable from "../BookingsTable";
+import BookingsTable from "./BookingsTable";
 import BookingsCalendar from "./BookingsCalendar";
 import type { Booking } from "@/app/types/booking";
 import type { NewsletterTheme } from "@/app/types/inventory";
@@ -16,19 +16,27 @@ export default async function BookingsPage() {
 
   const { data: newsletter } = await supabase
     .from("newsletters")
-    .select(
-      `
-        id, name, theme_config,
-        bookings(
-          id, target_date, status, ad_headline, ad_body, ad_link, sponsor_name, ad_image_path,
-          inventory_tiers(price, name, specs_headline_limit, specs_body_limit)
-        )
-      `
-    )
+    .select("id, name, theme_config")
     .eq("owner_id", user.id)
     .single();
 
-  const bookings: Booking[] = newsletter?.bookings || [];
+  let bookings: Booking[] = [];
+
+  if (newsletter?.id) {
+    const { data } = await supabase
+      .from("bookings")
+      .select(
+        `
+          id, target_date, status, ad_headline, ad_body, ad_link, sponsor_name, ad_image_path,
+          inventory_tiers(price, name, specs_headline_limit, specs_body_limit)
+        `
+      )
+      .eq("newsletter_id", newsletter.id)
+      .in("status", ["paid", "approved", "rejected"])
+      .order("target_date", { ascending: true });
+
+    bookings = (data as unknown as Booking[]) || [];
+  }
 
   const theme: NewsletterTheme = {
     primary_color: newsletter?.theme_config?.primary_color || "#6366f1",

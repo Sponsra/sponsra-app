@@ -10,8 +10,7 @@ import { Dropdown } from "primereact/dropdown";
 import { Checkbox } from "primereact/checkbox";
 import { TabView, TabPanel } from "primereact/tabview";
 import { Message } from "primereact/message";
-import { TierFormData, AvailabilitySchedule } from "@/app/types/inventory";
-import TierAvailabilitySection from "./TierAvailabilitySection";
+import { TierFormData } from "@/app/types/inventory";
 import sharedStyles from "./shared.module.css";
 import styles from "./TierFormDialog.module.css";
 
@@ -22,7 +21,7 @@ interface TierFormDialogProps {
   initialData?: Partial<TierFormData>;
   loading: boolean;
   newsletterId: string;
-  onScheduleChange?: (schedule: AvailabilitySchedule | null) => void;
+  onScheduleChange?: (any: any) => void; // Deprecated, kept for prop compatibility if needed
 }
 
 export default function TierFormDialog({
@@ -31,8 +30,6 @@ export default function TierFormDialog({
   onSave,
   initialData,
   loading,
-  newsletterId,
-  onScheduleChange,
 }: TierFormDialogProps) {
   const [formData, setFormData] = useState<TierFormData>({
     name: "",
@@ -43,6 +40,7 @@ export default function TierFormDialog({
     specs_headline_limit: 60,
     specs_body_limit: 280,
     specs_image_ratio: "any",
+    available_days: [1, 2, 3, 4, 5], // Default Mon-Fri
   });
 
   const [activeIndex, setActiveIndex] = useState(0); // Track active tab
@@ -60,6 +58,7 @@ export default function TierFormDialog({
         specs_headline_limit: initialData?.specs_headline_limit || 60,
         specs_body_limit: initialData?.specs_body_limit || 280,
         specs_image_ratio: initialData?.specs_image_ratio || "any",
+        available_days: initialData?.available_days || [1, 2, 3, 4, 5],
       });
     }
   }, [visible, initialData]);
@@ -84,6 +83,27 @@ export default function TierFormDialog({
     { label: "Landscape (1.91:1)", value: "1.91:1" },
     { label: "No Image Allowed", value: "no_image" },
   ];
+
+  const daysOfWeek = [
+    { label: "Mon", value: 1 },
+    { label: "Tue", value: 2 },
+    { label: "Wed", value: 3 },
+    { label: "Thu", value: 4 },
+    { label: "Fri", value: 5 },
+    { label: "Sat", value: 6 },
+    { label: "Sun", value: 0 },
+  ];
+
+  const toggleDay = (day: number) => {
+    const currentDays = formData.available_days || [];
+    let newDays;
+    if (currentDays.includes(day)) {
+      newDays = currentDays.filter((d) => d !== day);
+    } else {
+      newDays = [...currentDays, day];
+    }
+    setFormData({ ...formData, available_days: newDays });
+  };
 
   // Footer includes the Main Actions + The Active Toggle
   const renderFooter = () => (
@@ -252,13 +272,31 @@ export default function TierFormDialog({
           </div>
         </TabPanel>
 
-        {/* --- TAB 3: AVAILABILITY --- */}
+        {/* --- TAB 3: SCHEDULE (SIMPLIFIED) --- */}
         <TabPanel header="Schedule" leftIcon="pi pi-calendar">
-          <TierAvailabilitySection
-            tierId={formData.id}
-            newsletterId={newsletterId}
-            onScheduleChange={onScheduleChange}
+          <Message
+            severity="info"
+            text="Select the days of the week this ad tier is available."
+            className="w-full mb-3"
           />
+          <div className="flex flex-wrap gap-3">
+            {daysOfWeek.map((day) => (
+              <div key={day.value} className="flex align-items-center">
+                <Checkbox
+                  inputId={`day_${day.value}`}
+                  onChange={() => toggleDay(day.value)}
+                  checked={formData.available_days?.includes(day.value) ?? false}
+                />
+                <label htmlFor={`day_${day.value}`} className="ml-2 cursor-pointer">
+                  {day.label}
+                </label>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 text-sm text-gray-600">
+            <i className="pi pi-info-circle mr-1"></i>
+            Holidays and specific unavailable dates can be managed in <strong>Settings &gt; Availability Exceptions</strong>.
+          </div>
         </TabPanel>
       </TabView>
     </Dialog>
