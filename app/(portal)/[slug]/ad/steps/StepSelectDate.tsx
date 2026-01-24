@@ -223,10 +223,17 @@ export function StepSelectDateLeft({
   return (
     <div className={styles.contentArea || ""}>
       <div className={styles.formContent || ""}>
-        <h2 className={styles.cardTitle || ""}>The Market</h2>
-        <p className={styles.subtitle || ""}>Choose your placement and date</p>
+        <h2 className={styles.cardTitle || ""}>Advertise with {newsletterName}</h2>
+        {/* <p className={styles.subtitle || ""}>
+          Reach 15,000 engaged readers in the Tech/Software industry.
+        </p> */}
         <div className={styles.fieldGroup || ""}>
-          <label className={styles.label || ""}>Select Ad Type</label>
+          <div className={styles.sectionHeader}>
+            {/* <h3 className={styles.sectionTitle}>1. Choose a Placement</h3> */}
+            <p className={styles.sectionSubtitle}>
+              Select the ad format that fits your campaign goals.
+            </p>
+          </div>
           <div className={styles.tierCards || ""}>
             {tiers.map((tier) => {
               const isSelected = selectedTier?.id === tier.id;
@@ -326,6 +333,22 @@ export function StepSelectDateRight() {
     return toDateFromString(dateRange.end);
   }, [dateRange.end]);
 
+  // Check if there are any available dates (excluding disabled ones)
+  const hasAvailability = useMemo(() => {
+    // If loading, assume availability (or show loading state)
+    // If map is empty, we might not have fetched yet or there are no slots.
+    // relying on availabilityMap to contain all dates in range with status.
+    // If map has entries, check if any are 'available'.
+    if (availabilityMap.size === 0) return false;
+
+    // We also need to check if the dates are in validity range?
+    // The map contains statuses for the fetched range.
+    for (const status of availabilityMap.values()) {
+      if (status.status === "available") return true;
+    }
+    return false;
+  }, [availabilityMap]);
+
   // Custom date template to style available and booked dates
   const dateTemplate = (event: CalendarDateTemplateEvent) => {
     // Build date string from event properties
@@ -346,18 +369,47 @@ export function StepSelectDateRight() {
     return event.day;
   };
 
+  if (!selectedTier) {
+    return (
+      <div className={styles.calendarEmptyState}>
+        <p>Please select a placement to view availability.</p>
+      </div>
+    );
+  }
+
+  // If we have fetched availability (map has size > 0) and found no available dates
+  // AND we are not selected on a valid date (in case map update lagged)
+  // Actually, simpler: if availabilityMap is populated and hasAvailability is false.
+  const isSoldOut = availabilityMap.size > 0 && !hasAvailability;
+
   return (
-    <div className={styles.calendarContainer}>
-      <Calendar
-        value={date}
-        onChange={(e) => setDate(e.value as Date)}
-        inline
-        minDate={new Date()}
-        maxDate={maxDate}
-        disabledDates={disabledDates}
-        disabled={!selectedTier}
-        dateTemplate={dateTemplate}
-      />
+    <div className={styles.calendarWrapper}>
+      <div className={styles.rightHeader}>
+        <h3 className={styles.sectionTitle}>2. Select a Date</h3>
+        <p className={styles.sectionSubtitle}>
+          Available slots for <strong>{selectedTier.name}</strong>:
+        </p>
+      </div>
+
+      <div className={styles.calendarContainer}>
+        {isSoldOut ? (
+          <div className={styles.soldOutState}>
+            <h4 className={styles.soldOutTitle}>Sold Out</h4>
+            <p className={styles.soldOutText}>There are no available slots for this placement right now. Please check back later.</p>
+          </div>
+        ) : (
+          <Calendar
+            value={date}
+            onChange={(e) => setDate(e.value as Date)}
+            inline
+            minDate={new Date()}
+            maxDate={maxDate}
+            disabledDates={disabledDates}
+            disabled={!selectedTier}
+            dateTemplate={dateTemplate}
+          />
+        )}
+      </div>
     </div>
   );
 }

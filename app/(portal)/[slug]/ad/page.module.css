@@ -3,10 +3,6 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 3rem 1rem;
-  background: linear-gradient(
-    to bottom right,
-    rgba(var(--primary-color-rgb, 79, 70, 229), 0.1) 0%,
-    rgba(var(--primary-color-rgb, 79, 70, 229), 0.15) 100%
-  );
+  padding: 2rem;
+  background: linear-gradient(135deg, #229ebd30 0%, #229ebd7d 100%);
 }

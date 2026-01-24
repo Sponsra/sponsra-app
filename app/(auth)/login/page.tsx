@@ -77,14 +77,12 @@ export default function LoginPage() {
             <span>Sponsra</span>
           </div>
           <h1 className={styles.brandTitle}>
-            Infrastructure for Newsletters
+            Back to business.
           </h1>
           <p className={styles.brandDescription}>
-            Manage inventory, track bookings, and automate payouts—all in one place.
+            Sign in to manage your inventory, approve requests, and track your payouts.
           </p>
-        </div>
-        <div style={{ opacity: 0.7, fontSize: "0.875rem" }}>
-          © {new Date().getFullYear()} Sponsra Inc.
+
         </div>
       </div>
 
@@ -151,19 +149,12 @@ export default function LoginPage() {
             />
           </form>
 
-          <div className={styles.divider}>
-            <span className={styles.dividerText}>or continue with</span>
+          <div className={styles.footer}>
+            New to Sponsra?{" "}
+            <a href="/signup" className={styles.link}>
+              Sign up here
+            </a>
           </div>
-
-          <Button
-            label="Create New Account"
-            icon="pi pi-user-plus"
-            severity="secondary"
-            outlined
-            className={styles.createAccountButton}
-            onClick={handleSignUp}
-            disabled={loading}
-          />
         </div>
       </div>
     </div>

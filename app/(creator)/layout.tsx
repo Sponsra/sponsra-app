@@ -17,19 +17,9 @@ export default async function CreatorLayout({
         redirect("/login");
     }
 
-    // Fetch status
-    const { data: newsletter } = await supabase
-        .from("newsletters")
-        .select("slug, inventory_tiers(id)")
-        .eq("owner_id", user.id)
-        .single();
-
-    const hasSlug = !!newsletter?.slug;
-    const hasInventory =
-        Array.isArray(newsletter?.inventory_tiers) &&
-        newsletter.inventory_tiers.length > 0;
-
-    const isSetupComplete = hasSlug && hasInventory;
+    // We no longer block access based on inventory/slug status
+    // Users can access dashboard immediately after signup
+    const isSetupComplete = true;
 
     return (
         <RouteGuard isSetupComplete={isSetupComplete}>

@@ -119,8 +119,10 @@ export function StepReviewLeft({
 
   return (
     <div className={styles.contentArea}>
-      <h2 className={styles.cardTitle}>The Handshake</h2>
-      <p className={styles.subtitle}>Review your booking and complete payment</p>
+      <h2 className={styles.cardTitle}>Review & Pay</h2>
+      <p className={styles.subtitle}>
+        Review your booking details and complete payment.
+      </p>
 
       <div className={styles.orderSummary}>
         <div className={styles.orderItem}>

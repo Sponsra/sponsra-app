@@ -230,9 +230,9 @@ export function StepCreativeLeft({
 
   return (
     <div className={styles.contentArea}>
-      <h2 className={styles.cardTitle}>The Studio</h2>
+      <h2 className={styles.cardTitle}>Creative & Assets</h2>
       <p className={styles.subtitle}>
-        Customizing for: <span className={styles.tierName}>{tier.name}</span>
+        Upload the copy and images for your <span className={styles.tierName}>{tier.name}</span> slot.
       </p>
 
       <div className={styles.formFields}>

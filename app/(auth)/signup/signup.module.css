@@ -1,4 +1,5 @@
-/* Login Page Layout - Matched to Signup */
+/* Login/Signup Shared Base + Custom Signup Styles */
+
 .container {
     display: flex;
     min-height: 100vh;
@@ -19,17 +20,35 @@
     z-index: 0;
 }
 
-/* Split Layout - Left Side (Brand/Visual) */
+/* Left Side - Brand Visual */
 .brandSection {
     display: none;
     flex: 1;
-    /* Gradient from Signup Page */
-    background: linear-gradient(135deg, #2d9cb8a8 0%, #229ebd 100%);
+    /* background: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-900) 100%); REMOVE */
     position: relative;
     overflow: hidden;
     color: white;
     flex-direction: column;
     justify-content: space-between;
+}
+
+.brandImageWrapper {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 0;
+}
+
+.brandOverlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, #14546473 0%, #229ebd 100%);
+    z-index: 1;
 }
 
 .brandPattern {
@@ -83,7 +102,48 @@
     color: var(--bluegray-100);
 }
 
-/* Split Layout - Right Side (Form) */
+/* Steps Visualization */
+.stepsContainer {
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    flex-direction: column;
+}
+
+.stepsTitle {
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+    opacity: 0.8;
+    margin-bottom: 0.5rem;
+    color: var(--bluegray-100);
+}
+
+.step {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: white;
+}
+
+.checkmark {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    font-size: 0.75rem;
+    font-weight: bold;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+
+/* Right Side - Signup Form */
 .formSection {
     flex: 1;
     display: flex;
@@ -95,9 +155,10 @@
     z-index: 1;
 }
 
-.formContainer {
+.formCard {
     width: 100%;
     max-width: 480px;
+    /* Removed card styling per request */
     animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -133,25 +194,49 @@
     gap: 0.5rem;
 }
 
+.row {
+    display: flex;
+    gap: 1rem;
+}
+
+.row .inputGroup {
+    flex: 1;
+}
+
+.passwordRow {
+    display: flex;
+    gap: 1rem;
+    flex-direction: column;
+}
+
+.passwordRow .inputGroup {
+    flex: 1;
+}
+
 .label {
     font-size: 0.875rem;
     font-weight: 600;
     color: var(--color-text-heading);
 }
 
-.labelRow {
+.helper {
+    font-size: 0.75rem;
+    color: var(--text-color-secondary);
+    margin-top: 0.25rem;
+}
+
+.termsWrapper {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin: 0.5rem 0;
 }
 
-.forgotPassword {
-    font-size: 0.8rem;
-    font-weight: 600;
-}
-
-.w-full {
-    width: 100%;
+.termsLabel {
+    font-size: 0.875rem;
+    color: var(--color-text-body);
+    line-height: 1.4;
+    cursor: pointer;
 }
 
 .submitButton {
@@ -166,12 +251,6 @@
 
 .submitButton:hover {
     background: var(--primary-600);
-}
-
-.message {
-    width: 100%;
-    margin-bottom: 1.5rem;
-    border-radius: var(--radius);
 }
 
 .divider {
@@ -190,29 +269,18 @@
     background: var(--surface-border);
 }
 
-.passwordWrapper {
-    width: 100%;
-}
-
-.passwordWrapper :global(.p-password) {
-    width: 100%;
-}
-
-.passwordWrapper :global(.p-password-input) {
-    width: 100%;
-}
-
 .dividerText {
     position: relative;
     background: white;
     padding: 0 1rem;
     color: var(--text-color-secondary);
     font-size: 0.875rem;
+
 }
 
-.footer {
-    margin-top: 1.5rem;
+.loginLink {
     text-align: center;
+    margin-top: 1.5rem;
     font-size: 0.9rem;
     color: var(--color-text-body);
 }
@@ -231,26 +299,14 @@
     text-decoration: underline;
 }
 
-/* Responsive Styles */
-@media (min-width: 1024px) {
-    .brandSection {
-        display: flex;
-    }
+.message {
+    width: 100%;
+    margin-bottom: 1.5rem;
 }
 
-@media (max-width: 640px) {
-    .formContainer {
-        padding: 1.5rem;
-    }
-
-    .formSection {
-        background: white;
-        padding: 1rem;
-    }
-
-    .brandSection {
-        padding: 2rem;
-    }
+/* Utility for inputs */
+.w-full {
+    width: 100%;
 }
 
 @keyframes slideUp {
@@ -262,5 +318,30 @@
     to {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+
+/* Responsive */
+@media (min-width: 1024px) {
+    .brandSection {
+        display: flex;
+    }
+}
+
+@media (max-width: 640px) {
+    .formCard {
+        padding: 1.5rem;
+        box-shadow: none;
+        background: transparent;
+        border: none;
+    }
+
+    .formSection {
+        background: white;
+        padding: 1rem;
+    }
+
+    .brandSection {
+        padding: 2rem;
     }
 }
