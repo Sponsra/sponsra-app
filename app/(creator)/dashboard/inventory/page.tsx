@@ -19,10 +19,11 @@ export default async function InventoryPage() {
 
   const { data: tiers } = newsletter
     ? await supabase
-        .from("inventory_tiers")
-        .select("*")
-        .eq("newsletter_id", newsletter.id)
-        .order("price", { ascending: true })
+      .from("inventory_tiers")
+      .select("*")
+      .eq("newsletter_id", newsletter.id)
+      .eq("is_archived", false)
+      .order("price", { ascending: true })
     : { data: [] };
 
   return (
@@ -33,14 +34,14 @@ export default async function InventoryPage() {
           <div>
             <h1>Inventory</h1>
             <p className="dashboard-header-subtitle">
-              Manage your ad slots and pricing
+              Manage your ad & sponsorship inventory
             </p>
           </div>
         </div>
 
         <div className={styles.container}>
-          <InventoryManager 
-            initialTiers={tiers || []} 
+          <InventoryManager
+            initialTiers={tiers || []}
             newsletterId={newsletter?.id || ""}
           />
         </div>

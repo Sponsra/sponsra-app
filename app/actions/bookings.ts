@@ -25,6 +25,7 @@ export async function getAvailableDates(
     .from("inventory_tiers")
     .select("id, newsletter_id, available_days")
     .eq("id", tierId)
+    .eq("is_archived", false)
     .single();
 
   if (tierError || !tier) {
@@ -111,6 +112,7 @@ export async function createBooking(tierId: string, date: Date, slug: string) {
     .from("inventory_tiers")
     .select("id, newsletter_id, available_days")
     .eq("id", tierId)
+    .eq("is_archived", false)
     .single();
 
   if (!tier) return { success: false, message: "Tier not found." };

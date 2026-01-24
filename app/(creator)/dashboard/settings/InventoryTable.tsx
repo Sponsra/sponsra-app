@@ -5,7 +5,7 @@ import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { Button } from "primereact/button";
 import { Tag } from "primereact/tag";
-import { InventoryTier } from "@/app/types/inventory";
+import { InventoryTier, FORMAT_DEFAULTS } from "@/app/types/inventory";
 
 interface InventoryTableProps {
   tiers: InventoryTier[];
@@ -26,6 +26,21 @@ export default function InventoryTable({
   };
 
   const priceBody = (rowData: InventoryTier) => formatCurrency(rowData.price);
+
+  const formatBody = (rowData: InventoryTier) => {
+    const format = rowData.format || "hero";
+    let iconClass = "pi pi-image";
+    if (format === "native") iconClass = "pi pi-align-left";
+    if (format === "link") iconClass = "pi pi-link";
+
+    const label = FORMAT_DEFAULTS[format]?.label || format;
+    return (
+      <div className="flex align-items-center">
+        <i className={`${iconClass} mr-2 text-primary`} />
+        <span>{label}</span>
+      </div>
+    );
+  };
 
   const statusBody = (rowData: InventoryTier) => (
     <Tag
@@ -59,8 +74,14 @@ export default function InventoryTable({
       dataKey="id"
       emptyMessage="No tiers found. Create one to get started!"
     >
-      <Column field="name" header="Name" sortable style={{ width: "30%" }} />
-      <Column field="type" header="Type" sortable style={{ width: "15%" }} />
+      <Column field="name" header="Name" sortable style={{ width: "25%" }} />
+      <Column
+        field="format"
+        header="Format"
+        body={formatBody}
+        sortable
+        style={{ width: "15%" }}
+      />
       <Column
         field="price"
         header="Price"

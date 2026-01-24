@@ -1,9 +1,11 @@
 "use client";
 
-import { NewsletterTheme } from "@/app/types/inventory";
-
-interface NewsletterMockupProps {
-  theme: NewsletterTheme;
+export default function NewsletterMockup({
+  brandColor,
+  newsletterName,
+  content,
+}: {
+  brandColor: string;
   newsletterName: string;
   content: {
     sponsorName: string;
@@ -12,40 +14,17 @@ interface NewsletterMockupProps {
     link: string;
     imagePath?: string | null;
   };
-}
+}) {
+  // Simplified font family (system default)
+  const fontFamily =
+    "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
 
-export default function NewsletterMockup({
-  theme,
-  newsletterName,
-  content,
-}: NewsletterMockupProps) {
-  // Font family mapping
-  const getFontFamily = () => {
-    switch (theme.font_family) {
-      case "serif":
-        return "'Georgia', 'Times New Roman', serif";
-      case "mono":
-        return "'Courier New', 'Monaco', monospace";
-      case "sans":
-      default:
-        return "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
-    }
+  // Simplified layout (minimal style by default)
+  const borderStyle = {
+    borderTop: `3px solid ${brandColor}`,
+    paddingTop: "1.5rem",
+    paddingBottom: "1rem",
   };
-
-  // Layout style determines border/background
-  const isBoxed = theme.layout_style === "boxed";
-  const borderStyle = isBoxed
-    ? {
-        border: `2px solid ${theme.primary_color}`,
-        borderRadius: "8px",
-        padding: "1.5rem",
-        background: "#ffffff",
-      }
-    : {
-        borderTop: `3px solid ${theme.primary_color}`,
-        paddingTop: "1.5rem",
-        paddingBottom: "1rem",
-      };
 
   const imageUrl = content.imagePath
     ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/ad-creatives/${content.imagePath}`
@@ -57,7 +36,7 @@ export default function NewsletterMockup({
         maxWidth: "600px",
         margin: "0 auto",
         background: "#ffffff",
-        fontFamily: getFontFamily(),
+        fontFamily,
         color: "#1a1a1a",
       }}
     >
@@ -66,7 +45,7 @@ export default function NewsletterMockup({
         style={{
           textAlign: "center",
           paddingBottom: "2rem",
-          borderBottom: `2px solid ${theme.primary_color}20`,
+          borderBottom: `2px solid ${brandColor}20`,
           marginBottom: "2rem",
         }}
       >
@@ -74,7 +53,7 @@ export default function NewsletterMockup({
           style={{
             fontSize: "1.75rem",
             fontWeight: 700,
-            color: theme.primary_color,
+            color: brandColor,
             margin: 0,
             marginBottom: "0.5rem",
           }}
@@ -160,15 +139,19 @@ export default function NewsletterMockup({
         <a
           href={content.link || "#"}
           style={{
-            color: theme.primary_color,
+            color: brandColor,
             textDecoration: "none",
             fontWeight: 600,
             fontSize: "0.9375rem",
             display: "inline-block",
             marginBottom: "1rem",
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
-          onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
+          onMouseEnter={(e) =>
+            (e.currentTarget.style.textDecoration = "underline")
+          }
+          onMouseLeave={(e) =>
+            (e.currentTarget.style.textDecoration = "none")
+          }
         >
           {content.link || "https://your-website.com"} →
         </a>
@@ -180,7 +163,7 @@ export default function NewsletterMockup({
             color: "#666",
             fontStyle: "italic",
             paddingTop: "1rem",
-            borderTop: `1px solid ${theme.primary_color}20`,
+            borderTop: `1px solid ${brandColor}20`,
           }}
         >
           Sponsored by {content.sponsorName}
@@ -192,7 +175,7 @@ export default function NewsletterMockup({
         style={{
           textAlign: "center",
           paddingTop: "2rem",
-          borderTop: `1px solid ${theme.primary_color}20`,
+          borderTop: `1px solid ${brandColor}20`,
           color: "#999",
           fontSize: "0.8125rem",
         }}

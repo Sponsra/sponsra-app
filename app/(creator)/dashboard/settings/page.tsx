@@ -7,7 +7,7 @@ import BrandingSettings from "./BrandingSettings";
 import StripeSettings from "./StripeSettings";
 import { getStripeStatus } from "@/app/actions/stripe-connect";
 import sharedStyles from "./shared.module.css";
-import type { NewsletterTheme } from "@/app/types/inventory";
+
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -32,12 +32,7 @@ export default async function SettingsPage() {
     .eq("id", user.id)
     .single();
 
-  // Default theme fallback
-  const theme: NewsletterTheme = newsletter?.theme_config || {
-    primary_color: "#6366f1",
-    font_family: "sans",
-    layout_style: "minimal",
-  };
+
 
   return (
     <div className="dashboard-layout">
@@ -59,8 +54,7 @@ export default async function SettingsPage() {
 
           {/* NEW: Branding Settings */}
           <BrandingSettings
-            initialTheme={theme}
-            newsletterName={newsletter?.name || "Your Newsletter"}
+            initialBrandColor={newsletter?.brand_color || "#0ea5e9"}
           />
 
           {/* NEW: Stripe Settings */}

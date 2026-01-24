@@ -10,7 +10,7 @@ import {
   createStripeConnectAccount,
   getStripeStatus,
 } from "@/app/actions/stripe-connect";
-import type { InventoryTier, NewsletterTheme } from "@/app/types/inventory";
+import type { InventoryTier } from "@/app/types/inventory";
 import type { Booking } from "@/app/types/booking";
 
 export default async function Dashboard() {
@@ -28,7 +28,7 @@ export default async function Dashboard() {
     .from("newsletters")
     .select(
       `
-        id, name, slug, theme_config,
+        id, name, slug, brand_color,
         inventory_tiers(*),
         bookings(
             id, created_at, target_date, status, ad_headline, ad_body, ad_link, sponsor_name, ad_image_path,
@@ -46,11 +46,7 @@ export default async function Dashboard() {
   const tiers: InventoryTier[] = newsletter?.inventory_tiers || [];
   const bookings: Booking[] = newsletter?.bookings || [];
 
-  const theme: NewsletterTheme = {
-    primary_color: newsletter?.theme_config?.primary_color || "#6366f1",
-    font_family: newsletter?.theme_config?.font_family || "sans",
-    layout_style: newsletter?.theme_config?.layout_style || "minimal",
-  };
+
 
   // Date helpers
   const now = new Date();
@@ -103,8 +99,8 @@ export default async function Dashboard() {
     })
     .reduce((sum, b) => sum + getTierPrice(b), 0);
 
-  // 3. Pipeline Count (status = 'paid')
-  const pipelineCount = bookings.filter((b) => b.status === "paid").length;
+  // 3. Requests Count (status = 'paid')
+  const requestsCount = bookings.filter((b) => b.status === "paid").length;
 
   // 4. Occupancy Data (Next 30 Days)
   const today = new Date();
@@ -203,7 +199,7 @@ export default async function Dashboard() {
         <PulseCards
           revenueThisMonth={revenueThisMonth}
           revenueLastMonth={revenueLastMonth}
-          pipelineCount={pipelineCount}
+          requestsCount={requestsCount}
           occupancyData={{
             filled: filledSlots,
             total: totalSlots,
@@ -213,7 +209,10 @@ export default async function Dashboard() {
 
         {/* Row 2: Requires Attention */}
         <div style={{ marginBottom: "2rem" }}>
-          <RequiresAttention bookings={requiresAttention} theme={theme} />
+          <RequiresAttention
+            bookings={requiresAttention}
+            brandColor={newsletter?.brand_color || "#6366f1"}
+          />
         </div>
 
         {/* Row 3: Up Next */}

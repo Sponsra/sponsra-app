@@ -71,21 +71,73 @@ VALUES (
 ) ON CONFLICT (id) DO NOTHING;
 
 -- 4. Create Inventory Tiers
-INSERT INTO public.inventory_tiers (id, newsletter_id, name, type, description, price)
+-- 4. Create Inventory Tiers
+INSERT INTO public.inventory_tiers (
+    id, 
+    newsletter_id, 
+    name, 
+    type, 
+    format,
+    price, 
+    description,
+    specs_headline_limit,
+    specs_body_limit,
+    specs_image_ratio,
+    available_days,
+    is_active
+)
 VALUES 
+-- 1. Primary Sponsor (Hero)
 (
     'c2d0c999-9c0b-4ef8-bb6d-6bb9bd380a33',
     'b1f0c999-9c0b-4ef8-bb6d-6bb9bd380a22',
-    'Main Sponsor',
-    'sponsor',
-    'Top of the email, logo and 150 words.',
-    5000 -- $50.00
+    'Primary Sponsor',
+    'ad',
+    'hero',
+    50000, -- $500.00
+    'Primary sponsorship with image',
+    60,
+    280,
+    '1.91:1',
+    '{1, 2, 3, 4, 5}',
+    true
 ),
+-- 2. Mid-Roll (Native)
 (
     'c2d0c999-9c0b-4ef8-bb6d-6bb9bd380a44',
     'b1f0c999-9c0b-4ef8-bb6d-6bb9bd380a22',
-    'Classified Ad',
+    'Mid-Roll',
     'ad',
-    'Text only link at the bottom.',
-    1500 -- $15.00
-) ON CONFLICT (id) DO NOTHING;
+    'native',
+    25000, -- $250.00
+    'Text-only mid-roll placement',
+    80,
+    400,
+    'no_image',
+    '{1, 2, 3, 4, 5}',
+    true
+),
+-- 3. Classified (Link)
+(
+    'c2d0c999-9c0b-4ef8-bb6d-6bb9bd380a55',
+    'b1f0c999-9c0b-4ef8-bb6d-6bb9bd380a22',
+    'Classified',
+    'ad',
+    'link',
+    10000, -- $100.00
+    'Simple classified-style link (URL + text only)',
+    100,
+    0,
+    'no_image',
+    '{1, 2, 3, 4, 5}',
+    true
+) ON CONFLICT (id) DO UPDATE SET
+    name = EXCLUDED.name,
+    type = EXCLUDED.type,
+    format = EXCLUDED.format,
+    price = EXCLUDED.price,
+    description = EXCLUDED.description,
+    specs_headline_limit = EXCLUDED.specs_headline_limit,
+    specs_body_limit = EXCLUDED.specs_body_limit,
+    specs_image_ratio = EXCLUDED.specs_image_ratio,
+    available_days = EXCLUDED.available_days;

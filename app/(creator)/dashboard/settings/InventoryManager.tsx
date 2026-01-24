@@ -46,6 +46,7 @@ export default function InventoryManager({
       id: tier.id,
       name: tier.name,
       type: tier.type,
+      format: tier.format,
       price: tier.price,
       description: tier.description ?? "",
       is_active: tier.is_active,
@@ -136,7 +137,7 @@ export default function InventoryManager({
   const leftToolbar = (
     <div className="flex flex-wrap gap-2">
       <Button
-        label="New Tier"
+        label="New Placement"
         icon="pi pi-plus"
         onClick={openNew}
         className="modern-button"
@@ -148,8 +149,8 @@ export default function InventoryManager({
     <div className={sharedStyles.section}>
       <Toast ref={toast} />
       <div className={sharedStyles.sectionHeader}>
-        <h2>Inventory Tiers</h2>
-        <p>Manage your ad slots and pricing</p>
+        <h2>Placements</h2>
+        <p>Manage your ad slots & sponsorships</p>
       </div>
 
       <Toolbar className="mb-4" left={leftToolbar} />
