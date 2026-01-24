@@ -238,3 +238,75 @@
   background-color: var(--color-text-muted);
   transform: translateY(-50%);
 }
+
+/* New Styles for Step 1 Text Updates */
+
+.sectionHeader {
+  margin-bottom: 1rem;
+}
+
+.sectionTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-heading);
+  margin: 0 0 0.25rem 0;
+  font-family: var(--font-body);
+}
+
+.sectionSubtitle {
+  font-size: 0.875rem;
+  color: var(--color-text-body);
+  margin: 0;
+  font-family: var(--font-body);
+}
+
+.calendarWrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+}
+
+.rightHeader {
+  padding: 2.5rem 2rem 0;
+  margin-bottom: -1rem;
+  z-index: 2;
+}
+
+.calendarEmptyState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 2rem;
+  color: var(--color-text-muted);
+  text-align: center;
+  font-size: 0.9375rem;
+}
+
+.soldOutState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  text-align: center;
+  background: var(--color-bg-off-white);
+  border-radius: var(--radius);
+  margin: auto;
+  max-width: 400px;
+}
+
+.soldOutTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-text-heading);
+  margin: 0 0 0.75rem 0;
+}
+
+.soldOutText {
+  color: var(--color-text-body);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  margin: 0;
+}
