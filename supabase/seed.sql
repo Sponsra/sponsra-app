@@ -1,3 +1,6 @@
+-- Enable pgcrypto for password hashing
+CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions;
+
 -- 1. Create a Test User (auth.users)
 -- NOTE: The password is 'password'
 -- Delete existing data in correct order to avoid foreign key issues
@@ -31,7 +34,7 @@ INSERT INTO auth.users (
     'authenticated',
     'authenticated',
     'pilot@gmail.com',
-    crypt('password', gen_salt('bf')), -- Password is 'password'
+    extensions.crypt('password', extensions.gen_salt('bf')), -- Password is 'password'
     now(),
     now(),
     now(),
@@ -71,7 +74,6 @@ VALUES (
 ) ON CONFLICT (id) DO NOTHING;
 
 -- 4. Create Inventory Tiers
--- 4. Create Inventory Tiers
 INSERT INTO public.inventory_tiers (
     id, 
     newsletter_id, 
@@ -84,7 +86,8 @@ INSERT INTO public.inventory_tiers (
     specs_body_limit,
     specs_image_ratio,
     available_days,
-    is_active
+    is_active,
+    is_archived
 )
 VALUES 
 -- 1. Primary Sponsor (Hero)
@@ -100,7 +103,8 @@ VALUES
     280,
     '1.91:1',
     '{1, 2, 3, 4, 5}',
-    true
+    true,
+    false
 ),
 -- 2. Mid-Roll (Native)
 (
@@ -115,7 +119,8 @@ VALUES
     400,
     'no_image',
     '{1, 2, 3, 4, 5}',
-    true
+    true,
+    false
 ),
 -- 3. Classified (Link)
 (
@@ -130,7 +135,8 @@ VALUES
     0,
     'no_image',
     '{1, 2, 3, 4, 5}',
-    true
+    true,
+    false
 ) ON CONFLICT (id) DO UPDATE SET
     name = EXCLUDED.name,
     type = EXCLUDED.type,
@@ -140,4 +146,13 @@ VALUES
     specs_headline_limit = EXCLUDED.specs_headline_limit,
     specs_body_limit = EXCLUDED.specs_body_limit,
     specs_image_ratio = EXCLUDED.specs_image_ratio,
-    available_days = EXCLUDED.available_days;
+    available_days = EXCLUDED.available_days,
+    is_archived = EXCLUDED.is_archived;
+
+-- 5. Create sample availability exception (optional test data)
+INSERT INTO public.availability_exceptions (newsletter_id, date, description)
+VALUES (
+    'b1f0c999-9c0b-4ef8-bb6d-6bb9bd380a22',
+    '2026-02-14',
+    'Holiday - Newsletter not publishing'
+) ON CONFLICT (newsletter_id, date) DO NOTHING;
