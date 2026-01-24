@@ -13,19 +13,18 @@ import {
   generateMarkdown,
   generatePlainText,
 } from "@/utils/supabase/ad-export";
-import type { NewsletterTheme } from "@/app/types/inventory";
 import type { Booking } from "@/app/types/booking";
 import EmptyState from "./EmptyState";
 import classes from "./RequiresAttention.module.css";
 
 interface RequiresAttentionProps {
   bookings: Booking[];
-  theme: NewsletterTheme;
+  brandColor: string;
 }
 
 export default function RequiresAttention({
   bookings,
-  theme,
+  brandColor,
 }: RequiresAttentionProps) {
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [loadingAction, setLoadingAction] = useState(false);
@@ -105,7 +104,7 @@ export default function RequiresAttention({
     if (!selectedBooking) return;
     const code = generateHTML(
       buildAdContent(selectedBooking),
-      theme.primary_color
+      brandColor
     );
     void copyToClipboard(code, "HTML");
   };

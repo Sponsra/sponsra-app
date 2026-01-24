@@ -8,7 +8,7 @@ import {
 } from "react";
 import { Button } from "primereact/button";
 import { createBookingCheckout } from "@/app/actions/bookings";
-import { InventoryTierPublic, NewsletterTheme } from "@/app/types/inventory";
+import { InventoryTierPublic } from "@/app/types/inventory";
 import NewsletterMockup from "@/app/components/NewsletterMockup";
 import styles from "./StepReview.module.css";
 
@@ -29,7 +29,7 @@ interface StepReviewProviderProps {
   bookingId: string;
   tier: InventoryTierPublic;
   date: Date;
-  theme: NewsletterTheme;
+  brandColor: string;
   creative: {
     headline: string;
     body: string;
@@ -46,7 +46,7 @@ function StepReviewProvider({
   bookingId,
   tier,
   date,
-  theme,
+  brandColor,
   creative,
   onPayment,
   children,
@@ -171,13 +171,13 @@ export function StepReviewLeft({
 interface StepReviewRightProps {
   newsletterName: string;
   tier: InventoryTierPublic;
-  theme: NewsletterTheme;
+  brandColor: string;
 }
 
 export function StepReviewRight({
   newsletterName,
   tier,
-  theme,
+  brandColor,
 }: StepReviewRightProps) {
   const { headline, body, link, sponsorName, imagePath } = useStepReview();
 
@@ -212,7 +212,7 @@ export function StepReviewRight({
         </div>
         <div className={styles.browserContent}>
           <NewsletterMockup
-            theme={theme}
+            brandColor={brandColor}
             newsletterName={newsletterName}
             content={{
               sponsorName: sponsorName || "Your Sponsor",

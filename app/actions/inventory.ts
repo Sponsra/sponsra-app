@@ -5,8 +5,9 @@ import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 import {
   TierFormData,
-  NewsletterTheme,
   AvailabilityException,
+  TierFormat,
+  FORMAT_DEFAULTS,
 } from "@/app/types/inventory";
 
 type ActionResponse = {
@@ -64,6 +65,7 @@ export async function upsertTier(data: TierFormData): Promise<ActionResponse> {
     newsletter_id: newsletter.id,
     name: data.name,
     type: data.type,
+    format: data.format,
     price: data.price,
     description: data.description,
     is_active: data.is_active,
@@ -123,7 +125,7 @@ export async function deleteTier(tierId: string): Promise<ActionResponse> {
 
   const { error } = await supabase
     .from("inventory_tiers")
-    .delete()
+    .update({ is_archived: true })
     .eq("id", tierId)
     .eq("newsletter_id", newsletter.id);
 
@@ -133,9 +135,9 @@ export async function deleteTier(tierId: string): Promise<ActionResponse> {
   return { success: true };
 }
 
-// 4. Update Newsletter Theme
-export async function updateNewsletterTheme(
-  theme: NewsletterTheme
+// 4. Update Brand Color
+export async function updateBrandColor(
+  brandColor: string
 ): Promise<ActionResponse> {
   const supabase = await createClient();
   const {
@@ -146,7 +148,7 @@ export async function updateNewsletterTheme(
 
   const { error } = await supabase
     .from("newsletters")
-    .update({ theme_config: theme })
+    .update({ brand_color: brandColor })
     .eq("owner_id", user.id);
 
   if (error) return { success: false, error: error.message };
@@ -228,4 +230,70 @@ export async function getAvailabilityExceptions(
   }
 
   return data || [];
+}
+
+// 7. Seed Default Tiers (one of each format type)
+export async function seedDefaultTiers(): Promise<ActionResponse> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { success: false, error: "Unauthorized" };
+
+  const { data: newsletter } = await supabase
+    .from("newsletters")
+    .select("id")
+    .eq("owner_id", user.id)
+    .single();
+
+  if (!newsletter) return { success: false, error: "Newsletter not found." };
+
+  // Check if tiers already exist
+  const { data: existingTiers } = await supabase
+    .from("inventory_tiers")
+    .select("id")
+    .eq("newsletter_id", newsletter.id);
+
+  if (existingTiers && existingTiers.length > 0) {
+    return { success: true }; // Already seeded
+  }
+
+  // Default tier configurations
+  const defaultTiers: Array<{
+    format: TierFormat;
+    name: string;
+    price: number;
+  }> = [
+      { format: "hero", name: "Primary Sponsor", price: 50000 }, // $500
+      { format: "native", name: "Mid-Roll", price: 25000 }, // $250
+      { format: "link", name: "Classified", price: 10000 }, // $100
+    ];
+
+  const tiersToInsert = defaultTiers.map((tier) => {
+    const defaults = FORMAT_DEFAULTS[tier.format];
+    return {
+      newsletter_id: newsletter.id,
+      name: tier.name,
+      type: "ad" as const,
+      format: tier.format,
+      price: tier.price,
+      description: defaults.description,
+      is_active: true,
+      specs_headline_limit: defaults.specs_headline_limit,
+      specs_body_limit: defaults.specs_body_limit,
+      specs_image_ratio: defaults.specs_image_ratio,
+      available_days: [1, 2, 3, 4, 5], // Mon-Fri
+    };
+  });
+
+  const { error } = await supabase
+    .from("inventory_tiers")
+    .insert(tiersToInsert);
+
+  if (error) return { success: false, error: error.message };
+
+  revalidatePath("/dashboard/settings");
+  revalidatePath("/dashboard/inventory");
+  return { success: true };
 }

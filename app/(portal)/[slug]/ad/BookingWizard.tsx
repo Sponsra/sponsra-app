@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useSearchParams } from "next/navigation";
-import { InventoryTierPublic, NewsletterTheme } from "@/app/types/inventory";
+import { InventoryTierPublic } from "@/app/types/inventory";
 import StepSelectDateProvider, {
   StepSelectDateLeft,
   StepSelectDateRight,
@@ -24,7 +24,7 @@ interface BookingWizardProps {
   tiers: InventoryTierPublic[];
   newsletterName: string;
   slug: string;
-  theme: NewsletterTheme;
+  brandColor: string;
 }
 
 // Portal component that renders children into a target element
@@ -43,7 +43,7 @@ export default function BookingWizard({
   tiers,
   newsletterName,
   slug,
-  theme,
+  brandColor,
 }: BookingWizardProps) {
   const [currentStep, setCurrentStep] = useState<number | "success">(1);
   const [displayedStep, setDisplayedStep] = useState<number | "success">(1);
@@ -240,7 +240,7 @@ export default function BookingWizard({
                   newsletterName={newsletterName}
                   bookingId={bookingId}
                   tier={selectedTier}
-                  theme={theme}
+                  brandColor={brandColor}
                   initialSponsorName={prefilledSponsor}
                   onBack={handleStep2Back}
                   onContinue={handleStep2Continue}
@@ -266,7 +266,7 @@ export default function BookingWizard({
                         <StepCreativeRight
                           newsletterName={newsletterName}
                           tier={selectedTier}
-                          theme={theme}
+                          brandColor={brandColor}
                         />
                       </div>
                     </Portal>
@@ -281,7 +281,7 @@ export default function BookingWizard({
                   bookingId={bookingId}
                   tier={selectedTier}
                   date={selectedDate}
-                  theme={theme}
+                  brandColor={brandColor}
                   creative={creative}
                   onPayment={handleStep3Payment}
                 >
@@ -306,7 +306,7 @@ export default function BookingWizard({
                         <StepReviewRight
                           newsletterName={newsletterName}
                           tier={selectedTier}
-                          theme={theme}
+                          brandColor={brandColor}
                         />
                       </div>
                     </Portal>

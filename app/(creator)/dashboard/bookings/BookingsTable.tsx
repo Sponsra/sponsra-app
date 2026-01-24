@@ -15,15 +15,14 @@ import {
   generateMarkdown,
   generatePlainText,
 } from "@/utils/supabase/ad-export";
-import type { NewsletterTheme } from "@/app/types/inventory";
 import type { Booking } from "@/app/types/booking";
 
 interface BookingsTableProps {
   bookings: Booking[];
-  theme: NewsletterTheme;
+  brandColor: string;
 }
 
-export default function BookingsTable({ bookings, theme }: BookingsTableProps) {
+export default function BookingsTable({ bookings, brandColor }: BookingsTableProps) {
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [loadingAction, setLoadingAction] = useState(false);
   const router = useRouter();
@@ -139,7 +138,7 @@ export default function BookingsTable({ bookings, theme }: BookingsTableProps) {
     if (!selectedBooking) return;
     const code = generateHTML(
       buildAdContent(selectedBooking),
-      theme.primary_color
+      brandColor
     );
     void copyToClipboard(code, "HTML");
   };
@@ -429,8 +428,8 @@ export default function BookingsTable({ bookings, theme }: BookingsTableProps) {
                       fontSize: "0.7rem",
                       color:
                         (selectedBooking.ad_headline?.length || 0) >
-                        (getInventoryTier(selectedBooking)
-                          ?.specs_headline_limit || Infinity)
+                          (getInventoryTier(selectedBooking)
+                            ?.specs_headline_limit || Infinity)
                           ? "var(--red-500)"
                           : "var(--text-color-secondary)",
                     }}
@@ -441,8 +440,8 @@ export default function BookingsTable({ bookings, theme }: BookingsTableProps) {
                     {(selectedBooking.ad_headline?.length || 0) >
                       (getInventoryTier(selectedBooking)
                         ?.specs_headline_limit || Infinity) && (
-                      <i className="pi pi-exclamation-triangle ml-1" />
-                    )}
+                        <i className="pi pi-exclamation-triangle ml-1" />
+                      )}
                   </span>
                 )}
               </div>
@@ -459,24 +458,24 @@ export default function BookingsTable({ bookings, theme }: BookingsTableProps) {
               {(selectedBooking.ad_headline?.length || 0) >
                 (getInventoryTier(selectedBooking)?.specs_headline_limit ||
                   Infinity) && (
-                <div
-                  style={{
-                    marginTop: "0.5rem",
-                    padding: "0.5rem",
-                    background: "rgba(239, 68, 68, 0.1)",
-                    borderRadius: "4px",
-                    color: "var(--red-600)",
-                    fontSize: "0.875rem",
-                  }}
-                >
-                  <i className="pi pi-exclamation-triangle mr-1" />
-                  Headline exceeds limit by{" "}
-                  {(selectedBooking.ad_headline?.length || 0) -
-                    (getInventoryTier(selectedBooking)?.specs_headline_limit ||
-                      0)}{" "}
-                  characters
-                </div>
-              )}
+                  <div
+                    style={{
+                      marginTop: "0.5rem",
+                      padding: "0.5rem",
+                      background: "rgba(239, 68, 68, 0.1)",
+                      borderRadius: "4px",
+                      color: "var(--red-600)",
+                      fontSize: "0.875rem",
+                    }}
+                  >
+                    <i className="pi pi-exclamation-triangle mr-1" />
+                    Headline exceeds limit by{" "}
+                    {(selectedBooking.ad_headline?.length || 0) -
+                      (getInventoryTier(selectedBooking)?.specs_headline_limit ||
+                        0)}{" "}
+                    characters
+                  </div>
+                )}
             </div>
 
             <div
@@ -503,8 +502,8 @@ export default function BookingsTable({ bookings, theme }: BookingsTableProps) {
                       fontSize: "0.7rem",
                       color:
                         (selectedBooking.ad_body?.length || 0) >
-                        (getInventoryTier(selectedBooking)?.specs_body_limit ||
-                          Infinity)
+                          (getInventoryTier(selectedBooking)?.specs_body_limit ||
+                            Infinity)
                           ? "var(--red-500)"
                           : "var(--text-color-secondary)",
                     }}
@@ -514,8 +513,8 @@ export default function BookingsTable({ bookings, theme }: BookingsTableProps) {
                     {(selectedBooking.ad_body?.length || 0) >
                       (getInventoryTier(selectedBooking)?.specs_body_limit ||
                         Infinity) && (
-                      <i className="pi pi-exclamation-triangle ml-1" />
-                    )}
+                        <i className="pi pi-exclamation-triangle ml-1" />
+                      )}
                   </span>
                 )}
               </div>
@@ -533,24 +532,24 @@ export default function BookingsTable({ bookings, theme }: BookingsTableProps) {
               {(selectedBooking.ad_body?.length || 0) >
                 (getInventoryTier(selectedBooking)?.specs_body_limit ||
                   Infinity) && (
-                <div
-                  style={{
-                    marginTop: "0.5rem",
-                    padding: "0.5rem",
-                    background: "rgba(239, 68, 68, 0.1)",
-                    borderRadius: "4px",
-                    color: "var(--red-600)",
-                    fontSize: "0.875rem",
-                  }}
-                >
-                  <i className="pi pi-exclamation-triangle mr-1" />
-                  Body text exceeds limit by{" "}
-                  {(selectedBooking.ad_body?.length || 0) -
-                    (getInventoryTier(selectedBooking)?.specs_body_limit ||
-                      0)}{" "}
-                  characters
-                </div>
-              )}
+                  <div
+                    style={{
+                      marginTop: "0.5rem",
+                      padding: "0.5rem",
+                      background: "rgba(239, 68, 68, 0.1)",
+                      borderRadius: "4px",
+                      color: "var(--red-600)",
+                      fontSize: "0.875rem",
+                    }}
+                  >
+                    <i className="pi pi-exclamation-triangle mr-1" />
+                    Body text exceeds limit by{" "}
+                    {(selectedBooking.ad_body?.length || 0) -
+                      (getInventoryTier(selectedBooking)?.specs_body_limit ||
+                        0)}{" "}
+                    characters
+                  </div>
+                )}
             </div>
 
             <div

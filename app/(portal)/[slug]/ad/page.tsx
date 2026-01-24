@@ -1,7 +1,7 @@
 import { getNewsletterBySlug } from "@/lib/portal";
 import { notFound } from "next/navigation";
 import BookingWizard from "./BookingWizard";
-import { InventoryTierPublic, NewsletterTheme } from "@/app/types/inventory";
+import { InventoryTierPublic } from "@/app/types/inventory";
 import styles from "./page.module.css";
 
 interface PageProps {
@@ -22,11 +22,8 @@ export default async function AdBookingPage({ params }: PageProps) {
     newsletter.inventory_tiers || []
   ).filter((t: InventoryTierPublic) => t.type === "ad" && t.is_active);
 
-  const theme: NewsletterTheme = (newsletter as any).theme_config || {
-    primary_color: "#6366f1",
-    font_family: "sans",
-    layout_style: "minimal",
-  };
+  // Use brand_color directly
+  const brandColor = (newsletter as any).brand_color || "#0ea5e9";
 
   if (!isStripeConnected) {
     return (
@@ -50,7 +47,7 @@ export default async function AdBookingPage({ params }: PageProps) {
         tiers={adTiers}
         newsletterName={newsletter.name}
         slug={slug}
-        theme={theme}
+        brandColor={brandColor}
       />
     </div>
   );

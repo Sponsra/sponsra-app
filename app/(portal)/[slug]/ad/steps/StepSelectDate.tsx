@@ -15,6 +15,7 @@ import { createBooking, getAvailableDates } from "@/app/actions/bookings";
 import {
   InventoryTierPublic,
   DateAvailabilityStatus,
+  FORMAT_DEFAULTS,
 } from "@/app/types/inventory";
 import styles from "./StepSelectDate.module.css";
 
@@ -263,26 +264,22 @@ export function StepSelectDateLeft({
                   {isSelected && (
                     <div className={styles.tierCardRequirements || ""}>
                       <div className={styles.requirementsTitle || ""}>
-                        Ad Requirements:
+                        {FORMAT_DEFAULTS[tier.format]?.label || "Hero"} Format
                       </div>
                       <div className={styles.requirementsList || ""}>
                         <div>
-                          • Headline: {tier.specs_headline_limit} characters max
+                          • Headline: {tier.specs_headline_limit} chars
                         </div>
-                        <div>
-                          • Body: {tier.specs_body_limit} characters max
-                        </div>
-                        {tier.specs_image_ratio === "no_image" ? (
-                          <div>• No image required</div>
-                        ) : tier.specs_image_ratio === "1:1" ? (
-                          <div>• Image: Square (1:1) aspect ratio required</div>
-                        ) : tier.specs_image_ratio === "1.91:1" ? (
+                        {tier.specs_body_limit > 0 && (
                           <div>
-                            • Image: Landscape (1.91:1) aspect ratio required
+                            • Body: {tier.specs_body_limit} chars
                           </div>
-                        ) : (
-                          <div>• Image: Any aspect ratio</div>
                         )}
+                        <div>
+                          {tier.specs_image_ratio === "no_image"
+                            ? "• Text only (no image)"
+                            : `• Image required`}
+                        </div>
                       </div>
                     </div>
                   )}

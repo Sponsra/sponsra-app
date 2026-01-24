@@ -27,10 +27,11 @@ export async function getNewsletterBySlug(slug: string) {
   const { data: tiers, error: tiersError } = await supabase
     .from("inventory_tiers")
     .select(
-      "id, name, price, type, description, is_active, specs_headline_limit, specs_body_limit, specs_image_ratio"
+      "id, name, price, type, format, description, is_active, specs_headline_limit, specs_body_limit, specs_image_ratio, is_archived"
     )
     .eq("newsletter_id", newsletter.id)
     .eq("is_active", true) // Only fetch active tiers
+    .eq("is_archived", false)
     .order("price", { ascending: true });
 
   if (tiersError) {
