@@ -9,6 +9,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 });
 
 export async function POST(req: Request) {
+  console.log("⚡️ Stripe Webhook received!");
   // 2. SAFETY CHECK: Ensure keys are loaded
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
     console.error("❌ CRITICAL: SUPABASE_SERVICE_ROLE_KEY is missing.");
@@ -52,6 +53,7 @@ export async function POST(req: Request) {
   }
 
   // 3. Handle the event
+  console.log(`🔔 Event Type: ${event.type}`);
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
     const bookingId = session.metadata?.booking_id;
@@ -73,6 +75,27 @@ export async function POST(req: Request) {
       } else {
         console.log("🎉 Database successfully updated to PAID");
       }
+    }
+  } else if (event.type === "account.updated") {
+    const account = event.data.object as Stripe.Account;
+    console.log(`👤 Account updated: ${account.id}`);
+
+    const { error } = await supabaseAdmin
+      .from("profiles")
+      .update({
+        stripe_charges_enabled: account.charges_enabled,
+        stripe_details_submitted: account.details_submitted,
+      })
+      .eq("stripe_account_id", account.id);
+
+    if (error) {
+      console.error("❌ Profile Update Failed:", error);
+      return NextResponse.json(
+        { error: "Database update failed" },
+        { status: 500 }
+      );
+    } else {
+      console.log("✅ Profile updated with latest Stripe status");
     }
   }
 

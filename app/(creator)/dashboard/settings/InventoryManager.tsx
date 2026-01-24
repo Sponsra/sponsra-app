@@ -5,18 +5,26 @@ import { Button } from "primereact/button";
 import { Toast } from "primereact/toast";
 import { Toolbar } from "primereact/toolbar";
 import { Dialog } from "primereact/dialog";
-import { InventoryTier, TierFormData } from "@/app/types/inventory";
-import { upsertTier, deleteTier } from "@/app/actions/inventory";
-import InventoryTable from "./InventoryTable"; // The new table we just made
-import TierFormDialog from "./TierFormDialog"; // The new dialog we just made
-import styles from "./settings.module.css";
+import {
+  InventoryTier,
+  TierFormData,
+} from "@/app/types/inventory";
+import {
+  upsertTier,
+  deleteTier,
+} from "@/app/actions/inventory";
+import InventoryTable from "./InventoryTable";
+import TierFormDialog from "./TierFormDialog";
+import sharedStyles from "./shared.module.css";
 
 interface InventoryManagerProps {
   initialTiers: InventoryTier[];
+  newsletterId: string;
 }
 
 export default function InventoryManager({
   initialTiers,
+  newsletterId,
 }: InventoryManagerProps) {
   const [tiers, setTiers] = useState<InventoryTier[]>(initialTiers);
   const [tierDialog, setTierDialog] = useState(false);
@@ -33,27 +41,27 @@ export default function InventoryManager({
   };
 
   const openEdit = (tier: InventoryTier) => {
-    // Convert InventoryTier to TierFormData format (null -> undefined for description)
+    // Convert InventoryTier to TierFormData format
     setSelectedTier({
       id: tier.id,
       name: tier.name,
       type: tier.type,
+      format: tier.format,
       price: tier.price,
       description: tier.description ?? "",
       is_active: tier.is_active,
+      specs_headline_limit: tier.specs_headline_limit,
+      specs_body_limit: tier.specs_body_limit,
+      specs_image_ratio: tier.specs_image_ratio,
+      available_days: tier.available_days || [1, 2, 3, 4, 5],
     });
     setTierDialog(true);
   };
 
   const openDelete = (tier: InventoryTier) => {
-    // Convert InventoryTier to TierFormData format (null -> undefined for description)
     setSelectedTier({
       id: tier.id,
       name: tier.name,
-      type: tier.type,
-      price: tier.price,
-      description: tier.description ?? "",
-      is_active: tier.is_active,
     });
     setDeleteDialog(true);
   };
@@ -71,8 +79,6 @@ export default function InventoryManager({
         });
         setTierDialog(false);
         // In a production app, we might use router.refresh() here
-        // to re-fetch server data, but for now we rely on the redirect/revalidate
-        // or we could optimistically update local state here if needed.
         // For simplicity:
         window.location.reload();
       } else {
@@ -131,7 +137,7 @@ export default function InventoryManager({
   const leftToolbar = (
     <div className="flex flex-wrap gap-2">
       <Button
-        label="New Tier"
+        label="New Placement"
         icon="pi pi-plus"
         onClick={openNew}
         className="modern-button"
@@ -140,11 +146,11 @@ export default function InventoryManager({
   );
 
   return (
-    <div className={styles.section}>
+    <div className={sharedStyles.section}>
       <Toast ref={toast} />
-      <div className={styles.sectionHeader}>
-        <h2>Inventory Tiers</h2>
-        <p>Manage your ad slots and pricing</p>
+      <div className={sharedStyles.sectionHeader}>
+        <h2>Placements</h2>
+        <p>Manage your ad slots & sponsorships</p>
       </div>
 
       <Toolbar className="mb-4" left={leftToolbar} />
@@ -154,10 +160,13 @@ export default function InventoryManager({
       {/* Create/Edit Dialog */}
       <TierFormDialog
         visible={tierDialog}
-        onHide={() => setTierDialog(false)}
+        onHide={() => {
+          setTierDialog(false);
+        }}
         onSave={handleSave}
         initialData={selectedTier}
         loading={loading}
+        newsletterId={newsletterId}
       />
 
       {/* Delete Confirmation Dialog */}

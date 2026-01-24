@@ -1,3 +1,6 @@
+-- Enable pgcrypto for password hashing
+CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions;
+
 -- 1. Create a Test User (auth.users)
 -- NOTE: The password is 'password'
 -- Delete existing data in correct order to avoid foreign key issues
@@ -31,7 +34,7 @@ INSERT INTO auth.users (
     'authenticated',
     'authenticated',
     'pilot@gmail.com',
-    crypt('password', gen_salt('bf')), -- Password is 'password'
+    extensions.crypt('password', extensions.gen_salt('bf')), -- Password is 'password'
     now(),
     now(),
     now(),
@@ -71,21 +74,85 @@ VALUES (
 ) ON CONFLICT (id) DO NOTHING;
 
 -- 4. Create Inventory Tiers
-INSERT INTO public.inventory_tiers (id, newsletter_id, name, type, description, price)
+INSERT INTO public.inventory_tiers (
+    id, 
+    newsletter_id, 
+    name, 
+    type, 
+    format,
+    price, 
+    description,
+    specs_headline_limit,
+    specs_body_limit,
+    specs_image_ratio,
+    available_days,
+    is_active,
+    is_archived
+)
 VALUES 
+-- 1. Primary Sponsor (Hero)
 (
     'c2d0c999-9c0b-4ef8-bb6d-6bb9bd380a33',
     'b1f0c999-9c0b-4ef8-bb6d-6bb9bd380a22',
-    'Main Sponsor',
-    'sponsor',
-    'Top of the email, logo and 150 words.',
-    5000 -- $50.00
+    'Primary Sponsor',
+    'ad',
+    'hero',
+    50000, -- $500.00
+    'Primary sponsorship with image',
+    60,
+    280,
+    '1.91:1',
+    '{1, 2, 3, 4, 5}',
+    true,
+    false
 ),
+-- 2. Mid-Roll (Native)
 (
     'c2d0c999-9c0b-4ef8-bb6d-6bb9bd380a44',
     'b1f0c999-9c0b-4ef8-bb6d-6bb9bd380a22',
-    'Classified Ad',
+    'Mid-Roll',
     'ad',
-    'Text only link at the bottom.',
-    1500 -- $15.00
-) ON CONFLICT (id) DO NOTHING;
+    'native',
+    25000, -- $250.00
+    'Text-only mid-roll placement',
+    80,
+    400,
+    'no_image',
+    '{1, 2, 3, 4, 5}',
+    true,
+    false
+),
+-- 3. Classified (Link)
+(
+    'c2d0c999-9c0b-4ef8-bb6d-6bb9bd380a55',
+    'b1f0c999-9c0b-4ef8-bb6d-6bb9bd380a22',
+    'Classified',
+    'ad',
+    'link',
+    10000, -- $100.00
+    'Simple classified-style link (URL + text only)',
+    100,
+    0,
+    'no_image',
+    '{1, 2, 3, 4, 5}',
+    true,
+    false
+) ON CONFLICT (id) DO UPDATE SET
+    name = EXCLUDED.name,
+    type = EXCLUDED.type,
+    format = EXCLUDED.format,
+    price = EXCLUDED.price,
+    description = EXCLUDED.description,
+    specs_headline_limit = EXCLUDED.specs_headline_limit,
+    specs_body_limit = EXCLUDED.specs_body_limit,
+    specs_image_ratio = EXCLUDED.specs_image_ratio,
+    available_days = EXCLUDED.available_days,
+    is_archived = EXCLUDED.is_archived;
+
+-- 5. Create sample availability exception (optional test data)
+INSERT INTO public.availability_exceptions (newsletter_id, date, description)
+VALUES (
+    'b1f0c999-9c0b-4ef8-bb6d-6bb9bd380a22',
+    '2026-02-14',
+    'Holiday - Newsletter not publishing'
+) ON CONFLICT (newsletter_id, date) DO NOTHING;

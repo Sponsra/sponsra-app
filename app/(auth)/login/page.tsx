@@ -3,12 +3,12 @@
 import { useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
-import { Card } from "primereact/card";
+import Image from "next/image";
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
 import { Password } from "primereact/password";
-import { Divider } from "primereact/divider";
 import { Message } from "primereact/message";
+import styles from "./login.module.css"; // Import the CSS module
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -32,7 +32,6 @@ export default function LoginPage() {
       setError(error.message);
       setLoading(false);
     } else {
-      // NEW:
       router.push("/dashboard");
     }
   };
@@ -41,7 +40,6 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
 
-    // This creates the user AND triggers our SQL function to make a profile
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -54,91 +52,119 @@ export default function LoginPage() {
       setError(error.message);
       setLoading(false);
     } else if (data.session) {
-      // User is auto-confirmed (local dev) - redirect immediately
       router.push("/");
     } else {
-      // Email confirmation required (production)
       setError("Check your email for the confirmation link!");
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex align-items-center justify-content-center min-h-screen surface-ground">
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          minHeight: "100vh",
-          background: "var(--surface-ground)",
-        }}
-      >
-        <Card
-          title="Welcome to Sponsra"
-          subTitle="The Creator Infrastructure Platform"
-          style={{ width: "400px", boxShadow: "0 4px 20px rgba(0,0,0,0.08)" }}
-        >
+    <div className={styles.container}>
+      {/* Brand Section - Left Side */}
+      <div className={styles.brandSection}>
+        <div className={styles.brandPattern} />
+        <div className={styles.brandContent}>
+          <div className={styles.logo}>
+            <Image
+              src="/logo.svg"
+              alt="Sponsra Logo"
+              width={48}
+              height={48}
+              priority
+              style={{ objectFit: 'contain' }}
+            />
+            <span>Sponsra</span>
+          </div>
+          <h1 className={styles.brandTitle}>
+            Infrastructure for Newsletters
+          </h1>
+          <p className={styles.brandDescription}>
+            Manage inventory, track bookings, and automate payouts—all in one place.
+          </p>
+        </div>
+        <div style={{ opacity: 0.7, fontSize: "0.875rem" }}>
+          © {new Date().getFullYear()} Sponsra Inc.
+        </div>
+      </div>
+
+      {/* Form Section - Right Side */}
+      <div className={styles.formSection}>
+        <div className={styles.formContainer}>
+          <div className={styles.header}>
+            <h2 className={styles.title}>Welcome back</h2>
+            <p className={styles.subtitle}>
+              Enter your credentials to access your dashboard
+            </p>
+          </div>
+
           {error && (
             <Message
               severity={error.includes("Check") ? "success" : "error"}
               text={error}
-              style={{ width: "100%", marginBottom: "1rem" }}
+              className={styles.message}
             />
           )}
 
-          <form onSubmit={handleLogin} className="flex flex-column gap-3">
-            <div
-              className="flex flex-column gap-2"
-              style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
-            >
-              <span className="p-float-label">
-                <InputText
-                  id="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  style={{ width: "100%" }}
-                />
-                <label htmlFor="email">Email</label>
-              </span>
+          <form onSubmit={handleLogin} className={styles.form}>
+            <div className={styles.inputGroup}>
+              <label htmlFor="email" className={styles.label}>
+                Email address
+              </label>
+              <InputText
+                id="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="name@company.com"
+                className={styles["w-full"]}
+              />
+            </div>
 
-              <span className="p-float-label">
+            <div className={styles.inputGroup}>
+              <div className={styles.labelRow}>
+                <label htmlFor="password" className={styles.label}>
+                  Password
+                </label>
+                <a href="#" className={`${styles.link} ${styles.forgotPassword}`}>
+                  Forgot password?
+                </a>
+              </div>
+              <div className={styles.passwordWrapper}>
                 <Password
                   inputId="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   toggleMask
                   feedback={false}
-                  inputStyle={{ width: "100%" }}
-                  style={{ width: "100%" }}
+                  placeholder="Enter your password"
                 />
-                <label htmlFor="password">Password</label>
-              </span>
+              </div>
             </div>
 
             <Button
-              label="Sign In"
-              icon="pi pi-sign-in"
+              label={loading ? "Signing in..." : "Sign In"}
+              icon={loading ? "pi pi-spin pi-spinner" : "pi pi-arrow-right"}
+              iconPos="right"
               loading={loading}
               type="submit"
-              style={{ marginTop: "1rem", width: "100%" }}
+              className={styles.submitButton}
             />
           </form>
 
-          <Divider align="center">
-            <span className="p-tag">OR</span>
-          </Divider>
+          <div className={styles.divider}>
+            <span className={styles.dividerText}>or continue with</span>
+          </div>
 
           <Button
             label="Create New Account"
             icon="pi pi-user-plus"
             severity="secondary"
             outlined
-            style={{ width: "100%" }}
+            className={styles.createAccountButton}
             onClick={handleSignUp}
-            loading={loading}
+            disabled={loading}
           />
-        </Card>
+        </div>
       </div>
     </div>
   );

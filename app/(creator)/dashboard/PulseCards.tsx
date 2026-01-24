@@ -5,7 +5,7 @@ import classes from "./PulseCards.module.css";
 interface PulseCardsProps {
   revenueThisMonth: number;
   revenueLastMonth: number;
-  pipelineCount: number;
+  requestsCount: number;
   occupancyData: {
     filled: number;
     total: number;
@@ -16,7 +16,7 @@ interface PulseCardsProps {
 export default function PulseCards({
   revenueThisMonth,
   revenueLastMonth,
-  pipelineCount,
+  requestsCount,
   occupancyData,
 }: PulseCardsProps) {
   const formatCurrency = (value: number) => {
@@ -51,14 +51,12 @@ export default function PulseCards({
         </div>
         {revenueLastMonth > 0 && (
           <div
-            className={`${classes.cardTrend} ${
-              revenueTrend === "positive" ? classes.trendPositive : classes.trendNegative
-            }`}
+            className={`${classes.cardTrend} ${revenueTrend === "positive" ? classes.trendPositive : classes.trendNegative
+              }`}
           >
             <i
-              className={`pi ${
-                revenueTrend === "positive" ? "pi-arrow-up" : "pi-arrow-down"
-              }`}
+              className={`pi ${revenueTrend === "positive" ? "pi-arrow-up" : "pi-arrow-down"
+                }`}
             ></i>
             <span>
               {revenueTrend === "positive" ? "+" : "-"}
@@ -68,16 +66,16 @@ export default function PulseCards({
         )}
       </div>
 
-      {/* Card 2: Pipeline */}
-      <div className={`${classes.pulseCard} ${classes.pipelineCard}`}>
+      {/* Card 2: Requests */}
+      <div className={`${classes.pulseCard} ${classes.requestsCard}`}>
         <div className={classes.cardHeader}>
-          <div className={classes.cardTitle}>Pipeline</div>
+          <div className={classes.cardTitle}>Requests</div>
           <div className={classes.cardSubtitle}>Pending Approval</div>
         </div>
-        <div className={`${classes.cardValue} ${classes.pipelineValue}`}>
-          {pipelineCount}
+        <div className={`${classes.cardValue} ${classes.requestsValue}`}>
+          {requestsCount}
         </div>
-        {pipelineCount > 0 && (
+        {requestsCount > 0 && (
           <div className={classes.cardWarning}>
             <i className="pi pi-exclamation-triangle"></i>
             <span>Needs your attention</span>

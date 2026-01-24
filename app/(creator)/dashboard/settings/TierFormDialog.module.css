@@ -1,0 +1,153 @@
+/* Make TabView content feel spacious */
+:global(.p-tabview-panels) {
+  padding: 1.5rem 0.5rem 0.5rem 0.5rem !important;
+}
+
+/* Evenly spaced tabs */
+.evenTabs :global(.p-tabview-nav) {
+  display: flex;
+  width: 100%;
+}
+
+.evenTabs :global(.p-tabview-nav li) {
+  flex: 1;
+}
+
+.evenTabs :global(.p-tabview-nav li .p-tabview-nav-link) {
+  width: 100%;
+  justify-content: center;
+}
+
+/* Stepper Header */
+.stepperHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding: 0 1rem;
+  position: relative;
+}
+
+.stepperHeader::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 2rem;
+  right: 2rem;
+  height: 2px;
+  background-color: var(--surface-border, #e5e7eb);
+  z-index: 0;
+  transform: translateY(-50%);
+}
+
+.stepItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  z-index: 1;
+  position: relative;
+  background-color: var(--surface-ground, #ffffff);
+  padding: 0 0.5rem;
+}
+
+.stepCircle {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background-color: var(--surface-border, #e5e7eb);
+  color: var(--text-color-secondary, #6b7280);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  border: 2px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.stepLabel {
+  font-size: 0.875rem;
+  color: var(--text-color-secondary, #6b7280);
+  font-weight: 500;
+}
+
+.stepActive .stepCircle {
+  background-color: var(--primary-color, #0ea5e9);
+  color: #ffffff;
+  box-shadow: 0 0 0 4px var(--primary-50, #f0f9ff);
+}
+
+.stepActive .stepLabel {
+  color: var(--primary-color, #0ea5e9);
+  font-weight: 600;
+}
+
+.stepCompleted .stepCircle {
+  background-color: var(--primary-500, #0ea5e9);
+  /* Or success color */
+  color: #ffffff;
+}
+
+.stepCompleted .stepLabel {
+  color: var(--primary-700, #0369a1);
+}
+
+
+/* Format Cards Grid */
+.formatCards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.formatCard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem 0.75rem;
+  border: 2px solid var(--surface-border, #e5e7eb);
+  border-radius: 8px;
+  background: var(--surface-ground, #ffffff);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.formatCard:hover {
+  border-color: var(--primary-color, #0ea5e9);
+  background: var(--surface-50, #f8fafc);
+}
+
+.formatCardSelected {
+  border-color: var(--primary-color, #0ea5e9);
+  background: var(--primary-50, #f0f9ff);
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15);
+}
+
+.formatCardIcon {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.formatCardLabel {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--text-color, #1f2937);
+  margin-bottom: 0.25rem;
+}
+
+.formatCardDesc {
+  font-size: 0.75rem;
+  color: var(--text-color-secondary, #6b7280);
+  line-height: 1.3;
+}
+
+.formatCardCheck {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  color: var(--primary-color, #0ea5e9);
+  font-size: 0.875rem;
+}

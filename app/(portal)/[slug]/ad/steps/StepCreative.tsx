@@ -12,7 +12,7 @@ import { InputTextarea } from "primereact/inputtextarea";
 import { Button } from "primereact/button";
 import { Message } from "primereact/message";
 import { saveAdCreative } from "@/app/actions/bookings";
-import { InventoryTierPublic, NewsletterTheme } from "@/app/types/inventory";
+import { InventoryTierPublic } from "@/app/types/inventory";
 import ImageUpload from "../components/ImageUpload";
 import NewsletterMockup from "@/app/components/NewsletterMockup";
 import styles from "./StepCreative.module.css";
@@ -39,7 +39,7 @@ interface StepCreativeProviderProps {
   newsletterName: string;
   bookingId: string;
   tier: InventoryTierPublic;
-  theme: NewsletterTheme;
+  brandColor: string;
   initialSponsorName?: string;
   onBack: () => void;
   onContinue: (creative: {
@@ -56,7 +56,7 @@ function StepCreativeProvider({
   newsletterName,
   bookingId,
   tier,
-  theme,
+  brandColor,
   initialSponsorName = "",
   onBack,
   onContinue,
@@ -294,11 +294,10 @@ export function StepCreativeLeft({
                 Headline
               </label>
               <small
-                className={`${styles.charCount} ${
-                  headline.length >= tier.specs_headline_limit
-                    ? styles.charCountWarning
-                    : ""
-                }`}
+                className={`${styles.charCount} ${headline.length >= tier.specs_headline_limit
+                  ? styles.charCountWarning
+                  : ""
+                  }`}
               >
                 {headline.length}/{tier.specs_headline_limit}
               </small>
@@ -313,9 +312,8 @@ export function StepCreativeLeft({
                 }
               }}
               placeholder="Catchy title"
-              className={`${styles.input} ${
-                headline.length > tier.specs_headline_limit ? "p-invalid" : ""
-              }`}
+              className={`${styles.input} ${headline.length > tier.specs_headline_limit ? "p-invalid" : ""
+                }`}
             />
             {headline.length > tier.specs_headline_limit && (
               <small className={styles.errorText}>
@@ -331,11 +329,10 @@ export function StepCreativeLeft({
                 Body Text
               </label>
               <small
-                className={`${styles.charCount} ${
-                  body.length >= tier.specs_body_limit
-                    ? styles.charCountWarning
-                    : ""
-                }`}
+                className={`${styles.charCount} ${body.length >= tier.specs_body_limit
+                  ? styles.charCountWarning
+                  : ""
+                  }`}
               >
                 {body.length}/{tier.specs_body_limit}
               </small>
@@ -387,13 +384,13 @@ export function StepCreativeLeft({
 interface StepCreativeRightProps {
   newsletterName: string;
   tier: InventoryTierPublic;
-  theme: NewsletterTheme;
+  brandColor: string;
 }
 
 export function StepCreativeRight({
   newsletterName,
   tier,
-  theme,
+  brandColor,
 }: StepCreativeRightProps) {
   const { headline, body, link, sponsorName, imagePath } = useStepCreative();
 
@@ -431,7 +428,7 @@ export function StepCreativeRight({
         </div>
         <div className={styles.browserContent}>
           <NewsletterMockup
-            theme={theme}
+            brandColor={brandColor}
             newsletterName={newsletterName}
             content={{
               sponsorName: sponsorName || "Your Sponsor",

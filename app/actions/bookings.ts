@@ -1,25 +1,100 @@
+// app/actions/bookings.ts
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, unstable_noStore } from "next/cache";
 import { createCheckoutSession } from "./stripe";
-import { redirect } from "next/navigation";
+import {
+  DateAvailabilityStatus,
+  InventoryTier,
+  AvailabilityException,
+} from "@/app/types/inventory";
+import { iterateDates } from "@/app/utils/date-patterns";
 
-// 1. Get Blocked Dates (for the Calendar)
-export async function getBookedDates(tierId: string) {
+// 1. Get Available Dates with Full Status (Core function)
+export async function getAvailableDates(
+  tierId: string,
+  startDate: string,
+  endDate: string
+): Promise<DateAvailabilityStatus[]> {
+  unstable_noStore(); // Prevent caching
   const supabase = await createClient();
 
-  // Use the secure function to bypass RLS for public users
-  const { data, error } = await supabase.rpc("get_blocked_dates", {
-    queried_tier_id: tierId,
-  });
+  // 1. Fetch Tier Info (for available_days + newsletter_id)
+  const { data: tier, error: tierError } = await supabase
+    .from("inventory_tiers")
+    .select("id, newsletter_id, available_days")
+    .eq("id", tierId)
+    .eq("is_archived", false)
+    .single();
 
-  if (error) {
-    console.error("Error fetching dates:", error);
+  if (tierError || !tier) {
+    console.error("Error fetching tier:", tierError);
     return [];
   }
 
-  return data || [];
+  // 2. Fetch Availability Exceptions (Blackout Dates)
+  const { data: exceptions, error: exceptionsError } = await supabase
+    .from("availability_exceptions")
+    .select("date, description")
+    .eq("newsletter_id", tier.newsletter_id)
+    .gte("date", startDate)
+    .lte("date", endDate);
+
+  if (exceptionsError) {
+    console.error("Error fetching exceptions:", exceptionsError);
+    return [];
+  }
+
+  const exceptionMap = new Set(exceptions?.map((e) => e.date) || []);
+
+  // 3. Fetch Existing Bookings
+  // Exclude rejected bookings
+  const { data: bookings, error: bookingsError } = await supabase
+    .from("bookings")
+    .select("target_date, status")
+    .eq("tier_id", tierId)
+    .neq("status", "rejected")
+    .gte("target_date", startDate)
+    .lte("target_date", endDate);
+
+  if (bookingsError) {
+    console.error("Error fetching bookings:", bookingsError);
+    return [];
+  }
+
+  const bookedMap = new Set(bookings?.map((b) => b.target_date) || []);
+
+  const availableDays = new Set(tier.available_days || [1, 2, 3, 4, 5]); // Default Mon-Fri
+
+  // 4. Build Result
+  const result: DateAvailabilityStatus[] = [];
+
+  iterateDates(startDate, endDate, (date) => {
+    // Convert to YYYY-MM-DD
+    const dateStr = date.toISOString().split("T")[0];
+    const dayOfWeek = date.getUTCDay(); // 0=Sun, 6=Sat
+
+    if (bookedMap.has(dateStr)) {
+      result.push({ date: dateStr, status: "booked", reason: "Sold Out" });
+    } else if (exceptionMap.has(dateStr)) {
+      result.push({
+        date: dateStr,
+        status: "unavailable",
+        reason: "Date Closed",
+      });
+    } else if (!availableDays.has(dayOfWeek)) {
+      result.push({
+        date: dateStr,
+        status: "unavailable",
+        reason: "Tier unavailable",
+      });
+    } else {
+      result.push({ date: dateStr, status: "available" });
+    }
+  });
+
+  return result;
 }
 
 // 2. Create a Draft Booking (Step 1)
@@ -29,6 +104,37 @@ export async function createBooking(tierId: string, date: Date, slug: string) {
   // Convert JS Date to SQL Date string (YYYY-MM-DD)
   // We use "en-CA" locale to get YYYY-MM-DD reliably
   const dateStr = date.toLocaleDateString("en-CA");
+  const dayOfWeek = date.getDay();
+
+  // --- VALIDATION START ---
+  // 1. Fetch Tier Info
+  const { data: tier } = await supabase
+    .from("inventory_tiers")
+    .select("id, newsletter_id, available_days")
+    .eq("id", tierId)
+    .eq("is_archived", false)
+    .single();
+
+  if (!tier) return { success: false, message: "Tier not found." };
+
+  // 2. Check if Day of Week is allowed
+  const availableDays = tier.available_days || [1, 2, 3, 4, 5];
+  if (!availableDays.includes(dayOfWeek)) {
+    return { success: false, message: "This ad slot is not available on this day of the week." };
+  }
+
+  // 3. Check if date is in Exceptions
+  const { data: exception } = await supabase
+    .from("availability_exceptions")
+    .select("id")
+    .eq("newsletter_id", tier.newsletter_id)
+    .eq("date", dateStr)
+    .single();
+
+  if (exception) {
+    return { success: false, message: "This date is closed for bookings." };
+  }
+  // --- VALIDATION END ---
 
   const { data, error } = await supabase.rpc("create_booking", {
     p_tier_id: tierId,
@@ -39,10 +145,11 @@ export async function createBooking(tierId: string, date: Date, slug: string) {
   if (error) {
     console.error("Booking Error:", error);
     // Handle the "Duplicate Key" error gracefully
+    // Database enforces uniqueness - catch unique_violation
     if (error.code === "23505") {
       return {
         success: false,
-        message: "This date was just taken. Please choose another.",
+        message: "Sorry, this date was just taken!",
       };
     }
     return { success: false, message: error.message };
@@ -58,7 +165,7 @@ export async function saveAdCreative(
     body: string;
     link: string;
     sponsorName: string;
-    imagePath?: string | null; // <--- Added type definition
+    imagePath?: string | null;
   }
 ) {
   const supabase = await createClient();
@@ -120,7 +227,7 @@ export async function saveAdCreative(
     new_body: content.body,
     new_link: content.link,
     new_sponsor_name: content.sponsorName,
-    new_image_path: content.imagePath || null, // <--- Pass the path
+    new_image_path: content.imagePath || null,
   });
 
   if (error) {
@@ -163,6 +270,7 @@ export async function getOwnerBookings() {
   const newsletterIds = newsletters.map((n) => n.id);
 
   // Fetch Bookings with EXPLICIT columns to ensure nothing is missed
+  // Only show bookings that have been paid for (exclude draft and pending_payment)
   const { data, error } = await supabase
     .from("bookings")
     .select(
@@ -187,6 +295,7 @@ export async function getOwnerBookings() {
     `
     )
     .in("newsletter_id", newsletterIds)
+    .in("status", ["paid", "approved", "rejected"]) // Only show completed bookings
     .order("target_date", { ascending: true });
 
   if (error) {

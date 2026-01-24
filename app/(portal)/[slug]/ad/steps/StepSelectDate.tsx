@@ -6,19 +6,31 @@ import {
   ReactNode,
   createContext,
   useContext,
+  useMemo,
 } from "react";
 import { Calendar } from "primereact/calendar";
+import type { CalendarDateTemplateEvent } from "primereact/calendar";
 import { Button } from "primereact/button";
-import { createBooking, getBookedDates } from "@/app/actions/bookings";
-import { InventoryTierPublic } from "@/app/types/inventory";
+import { createBooking, getAvailableDates } from "@/app/actions/bookings";
+import {
+  InventoryTierPublic,
+  DateAvailabilityStatus,
+  FORMAT_DEFAULTS,
+} from "@/app/types/inventory";
 import styles from "./StepSelectDate.module.css";
 
-type BookedDateItem = { target_date?: string | null } | string;
-
-const toDateFromBookedItem = (item: BookedDateItem) => {
-  const dateStr = typeof item === "string" ? item : item.target_date || "";
+// Helper to convert date string to Date object
+const toDateFromString = (dateStr: string): Date => {
   const [y, m, d] = dateStr.split("-").map(Number);
   return new Date(y, m - 1, d);
+};
+
+// Helper to format date as YYYY-MM-DD
+const formatDateString = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 };
 
 interface StepSelectDateContextType {
@@ -28,6 +40,8 @@ interface StepSelectDateContextType {
   setDate: (date: Date | null) => void;
   loading: boolean;
   disabledDates: Date[];
+  availabilityMap: Map<string, DateAvailabilityStatus>;
+  dateRange: { start: string; end: string };
   handleSubmit: () => Promise<void>;
 }
 
@@ -58,22 +72,94 @@ function StepSelectDateProvider({
   const [date, setDate] = useState<Date | null>(null);
   const [loading, setLoading] = useState(false);
   const [disabledDates, setDisabledDates] = useState<Date[]>([]);
+  const [availabilityMap, setAvailabilityMap] = useState<
+    Map<string, DateAvailabilityStatus>
+  >(new Map());
 
-  // Fetch blocked dates whenever the user picks a tier
+  // Calculate date range (1-3 months from today)
+  const dateRange = useMemo(() => {
+    const start = new Date();
+    start.setDate(1); // Start of current month
+    const end = new Date();
+    end.setMonth(end.getMonth() + 3); // 3 months ahead
+    end.setDate(0); // Last day of that month
+    return {
+      start: formatDateString(start),
+      end: formatDateString(end),
+    };
+  }, []);
+
+  // Fetch availability dates whenever the user picks a tier
   useEffect(() => {
-    if (selectedTier) {
-      setLoading(true);
-      getBookedDates(selectedTier.id)
-        .then((data: BookedDateItem[]) => {
-          const dateObjects = data.map(toDateFromBookedItem);
-          setDisabledDates(dateObjects);
-        })
-        .finally(() => setLoading(false));
+    if (!selectedTier) {
+      setAvailabilityMap(new Map());
+      setDisabledDates([]);
+      return;
     }
-  }, [selectedTier]);
+
+    const fetchAvailability = async () => {
+      try {
+        const availability = await getAvailableDates(
+          selectedTier.id,
+          dateRange.start,
+          dateRange.end
+        );
+
+        // Build availability map
+        const map = new Map<string, DateAvailabilityStatus>();
+        availability.forEach((item) => {
+          map.set(item.date, item);
+        });
+
+        // Build disabled dates array (booked + unavailable)
+        const disabled: Date[] = [];
+        availability.forEach((item) => {
+          if (item.status !== "available") {
+            disabled.push(toDateFromString(item.date));
+          }
+        });
+
+        setAvailabilityMap(map);
+        setDisabledDates(disabled);
+
+        // If the currently selected date is no longer available, clear it
+        if (date) {
+          const dateStr = formatDateString(date);
+          const status = map.get(dateStr);
+          if (!status || status.status !== "available") {
+            setDate(null);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching availability:", error);
+        setAvailabilityMap(new Map());
+        setDisabledDates([]);
+      }
+    };
+
+    // Initial fetch
+    setLoading(true);
+    fetchAvailability().finally(() => setLoading(false));
+
+    // Poll every 10 seconds to catch real-time bookings
+    const pollInterval = setInterval(fetchAvailability, 10000);
+
+    return () => clearInterval(pollInterval);
+  }, [selectedTier, dateRange, date]);
 
   const handleSubmit = async () => {
     if (!date || !selectedTier) return;
+
+    // Validate date is within calculated range (safety check)
+    const dateStr = formatDateString(date);
+    if (dateStr < dateRange.start || dateStr > dateRange.end) {
+      alert(
+        "This date is outside the available booking range. Please select a date within the next 3 months."
+      );
+      setDate(null);
+      return;
+    }
+
     setLoading(true);
 
     const result = await createBooking(selectedTier.id, date, slug);
@@ -81,16 +167,13 @@ function StepSelectDateProvider({
     if (result.success && result.bookingId) {
       onContinue(selectedTier, date, result.bookingId);
     } else {
+      // Show error - the polling mechanism will refresh availability automatically
       alert(
-        result.message || "This date was just taken. Please choose another."
+        result.message || "Unable to book this date. Please select another."
       );
-
-      // Refresh blocked dates
-      const dates = (await getBookedDates(selectedTier.id)) as BookedDateItem[];
-      const dateObjects = dates.map(toDateFromBookedItem);
-      setDisabledDates(dateObjects);
       setDate(null);
     }
+
     setLoading(false);
   };
 
@@ -103,6 +186,8 @@ function StepSelectDateProvider({
         setDate,
         loading,
         disabledDates,
+        availabilityMap,
+        dateRange,
         handleSubmit,
       }}
     >
@@ -179,26 +264,22 @@ export function StepSelectDateLeft({
                   {isSelected && (
                     <div className={styles.tierCardRequirements || ""}>
                       <div className={styles.requirementsTitle || ""}>
-                        Ad Requirements:
+                        {FORMAT_DEFAULTS[tier.format]?.label || "Hero"} Format
                       </div>
                       <div className={styles.requirementsList || ""}>
                         <div>
-                          • Headline: {tier.specs_headline_limit} characters max
+                          • Headline: {tier.specs_headline_limit} chars
                         </div>
-                        <div>
-                          • Body: {tier.specs_body_limit} characters max
-                        </div>
-                        {tier.specs_image_ratio === "no_image" ? (
-                          <div>• No image required</div>
-                        ) : tier.specs_image_ratio === "1:1" ? (
-                          <div>• Image: Square (1:1) aspect ratio required</div>
-                        ) : tier.specs_image_ratio === "1.91:1" ? (
+                        {tier.specs_body_limit > 0 && (
                           <div>
-                            • Image: Landscape (1.91:1) aspect ratio required
+                            • Body: {tier.specs_body_limit} chars
                           </div>
-                        ) : (
-                          <div>• Image: Any aspect ratio</div>
                         )}
+                        <div>
+                          {tier.specs_image_ratio === "no_image"
+                            ? "• Text only (no image)"
+                            : `• Image required`}
+                        </div>
                       </div>
                     </div>
                   )}
@@ -231,7 +312,39 @@ export function StepSelectDateLeft({
 }
 
 export function StepSelectDateRight() {
-  const { selectedTier, date, setDate, disabledDates } = useStepSelectDate();
+  const {
+    selectedTier,
+    date,
+    setDate,
+    disabledDates,
+    availabilityMap,
+    dateRange,
+  } = useStepSelectDate();
+
+  // Calculate max date from date range
+  const maxDate = useMemo(() => {
+    return toDateFromString(dateRange.end);
+  }, [dateRange.end]);
+
+  // Custom date template to style available and booked dates
+  const dateTemplate = (event: CalendarDateTemplateEvent) => {
+    // Build date string from event properties
+    const year = event.year;
+    const month = String(event.month + 1).padStart(2, "0");
+    const day = String(event.day).padStart(2, "0");
+    const dateStr = `${year}-${month}-${day}`;
+    const status = availabilityMap.get(dateStr);
+
+    if (status && status.status === "available") {
+      return <span className={styles.availableDate}>{event.day}</span>;
+    }
+
+    if (status && status.status === "booked") {
+      return <span className={styles.bookedDate}>{event.day}</span>;
+    }
+
+    return event.day;
+  };
 
   return (
     <div className={styles.calendarContainer}>
@@ -240,8 +353,10 @@ export function StepSelectDateRight() {
         onChange={(e) => setDate(e.value as Date)}
         inline
         minDate={new Date()}
+        maxDate={maxDate}
         disabledDates={disabledDates}
         disabled={!selectedTier}
+        dateTemplate={dateTemplate}
       />
     </div>
   );

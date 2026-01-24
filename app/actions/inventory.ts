@@ -3,11 +3,17 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
-import { TierFormData, NewsletterTheme } from "@/app/types/inventory";
+import {
+  TierFormData,
+  AvailabilityException,
+  TierFormat,
+  FORMAT_DEFAULTS,
+} from "@/app/types/inventory";
 
 type ActionResponse = {
   success: boolean;
   error?: string;
+  tierId?: string; // For tier upsert, return the tier ID
 };
 
 // 1. Update Newsletter Details (Name/Slug)
@@ -59,15 +65,19 @@ export async function upsertTier(data: TierFormData): Promise<ActionResponse> {
     newsletter_id: newsletter.id,
     name: data.name,
     type: data.type,
+    format: data.format,
     price: data.price,
     description: data.description,
     is_active: data.is_active,
     specs_headline_limit: data.specs_headline_limit,
     specs_body_limit: data.specs_body_limit,
     specs_image_ratio: data.specs_image_ratio,
+    available_days: data.available_days || [1, 2, 3, 4, 5], // Default Mon-Fri if not specified
   };
 
   let error;
+  let tierId = data.id;
+
   if (data.id) {
     // Update
     const res = await supabase
@@ -77,15 +87,23 @@ export async function upsertTier(data: TierFormData): Promise<ActionResponse> {
       .eq("newsletter_id", newsletter.id);
     error = res.error;
   } else {
-    // Insert
-    const res = await supabase.from("inventory_tiers").insert(payload);
+    // Insert - need to get the ID back
+    const res = await supabase
+      .from("inventory_tiers")
+      .insert(payload)
+      .select("id")
+      .single();
     error = res.error;
+    if (res.data) {
+      tierId = res.data.id;
+    }
   }
 
   if (error) return { success: false, error: error.message };
 
   revalidatePath("/dashboard/settings");
-  return { success: true };
+  revalidatePath("/dashboard/inventory");
+  return { success: true, tierId };
 }
 
 // 3. Delete Tier
@@ -107,7 +125,7 @@ export async function deleteTier(tierId: string): Promise<ActionResponse> {
 
   const { error } = await supabase
     .from("inventory_tiers")
-    .delete()
+    .update({ is_archived: true })
     .eq("id", tierId)
     .eq("newsletter_id", newsletter.id);
 
@@ -117,9 +135,9 @@ export async function deleteTier(tierId: string): Promise<ActionResponse> {
   return { success: true };
 }
 
-// 4. Update Newsletter Theme
-export async function updateNewsletterTheme(
-  theme: NewsletterTheme
+// 4. Update Brand Color
+export async function updateBrandColor(
+  brandColor: string
 ): Promise<ActionResponse> {
   const supabase = await createClient();
   const {
@@ -130,11 +148,152 @@ export async function updateNewsletterTheme(
 
   const { error } = await supabase
     .from("newsletters")
-    .update({ theme_config: theme })
+    .update({ brand_color: brandColor })
     .eq("owner_id", user.id);
 
   if (error) return { success: false, error: error.message };
 
   revalidatePath("/dashboard/settings");
+  return { success: true };
+}
+
+// 5. Toggle Availability Exception (Add/Remove Date)
+export async function toggleAvailabilityException(
+  newsletterId: string,
+  date: string // YYYY-MM-DD
+): Promise<ActionResponse> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { success: false, error: "Unauthorized" };
+
+  // Check ownership
+  const { data: newsletter } = await supabase
+    .from("newsletters")
+    .select("id")
+    .eq("id", newsletterId)
+    .eq("owner_id", user.id)
+    .single();
+
+  if (!newsletter) return { success: false, error: "Newsletter not found." };
+
+  // Check if it exists
+  const { data: existing } = await supabase
+    .from("availability_exceptions")
+    .select("id")
+    .eq("newsletter_id", newsletterId)
+    .eq("date", date)
+    .single();
+
+  let error;
+  if (existing) {
+    // Remove exception (Limit opened)
+    const res = await supabase
+      .from("availability_exceptions")
+      .delete()
+      .eq("id", existing.id);
+    error = res.error;
+  } else {
+    // Add exception (Limit closed)
+    const res = await supabase
+      .from("availability_exceptions")
+      .insert({
+        newsletter_id: newsletterId,
+        date: date,
+        description: "Manually blocked",
+      });
+    error = res.error;
+  }
+
+  if (error) return { success: false, error: error.message };
+
+  revalidatePath("/dashboard/settings");
+  return { success: true };
+}
+
+// 6. Get Availability Exceptions
+export async function getAvailabilityExceptions(
+  newsletterId: string
+): Promise<AvailabilityException[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("availability_exceptions")
+    .select("*")
+    .eq("newsletter_id", newsletterId);
+
+  if (error) {
+    console.error("Error fetching exceptions:", error);
+    return [];
+  }
+
+  return data || [];
+}
+
+// 7. Seed Default Tiers (one of each format type)
+export async function seedDefaultTiers(): Promise<ActionResponse> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { success: false, error: "Unauthorized" };
+
+  const { data: newsletter } = await supabase
+    .from("newsletters")
+    .select("id")
+    .eq("owner_id", user.id)
+    .single();
+
+  if (!newsletter) return { success: false, error: "Newsletter not found." };
+
+  // Check if tiers already exist
+  const { data: existingTiers } = await supabase
+    .from("inventory_tiers")
+    .select("id")
+    .eq("newsletter_id", newsletter.id);
+
+  if (existingTiers && existingTiers.length > 0) {
+    return { success: true }; // Already seeded
+  }
+
+  // Default tier configurations
+  const defaultTiers: Array<{
+    format: TierFormat;
+    name: string;
+    price: number;
+  }> = [
+      { format: "hero", name: "Primary Sponsor", price: 50000 }, // $500
+      { format: "native", name: "Mid-Roll", price: 25000 }, // $250
+      { format: "link", name: "Classified", price: 10000 }, // $100
+    ];
+
+  const tiersToInsert = defaultTiers.map((tier) => {
+    const defaults = FORMAT_DEFAULTS[tier.format];
+    return {
+      newsletter_id: newsletter.id,
+      name: tier.name,
+      type: "ad" as const,
+      format: tier.format,
+      price: tier.price,
+      description: defaults.description,
+      is_active: true,
+      specs_headline_limit: defaults.specs_headline_limit,
+      specs_body_limit: defaults.specs_body_limit,
+      specs_image_ratio: defaults.specs_image_ratio,
+      available_days: [1, 2, 3, 4, 5], // Mon-Fri
+    };
+  });
+
+  const { error } = await supabase
+    .from("inventory_tiers")
+    .insert(tiersToInsert);
+
+  if (error) return { success: false, error: error.message };
+
+  revalidatePath("/dashboard/settings");
+  revalidatePath("/dashboard/inventory");
   return { success: true };
 }

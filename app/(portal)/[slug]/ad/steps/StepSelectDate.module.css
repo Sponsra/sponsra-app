@@ -15,7 +15,8 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  overflow-x: visible;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
 }
 
 .buttonContainer {
@@ -94,7 +95,13 @@
   background: var(--color-bg-off-white);
   transform: scale(1.01);
   box-shadow: 0 0 0 1px rgba(var(--primary-color-rgb), 0.2), var(--shadow-sm);
-  z-index: 1;
+  z-index: 10;
+}
+
+.tierCardUnselected:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+  z-index: 10;
 }
 
 .tierCardSelected {
@@ -191,84 +198,43 @@
   width: 100%;
   height: 100%;
   overflow: auto;
+  max-width: 100%;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
 }
 
-/* Remove calendar borders for clean look */
-.calendarContainer :global(.p-calendar) {
-  border: none;
-  box-shadow: none;
+@media (max-width: 768px) {
+  .calendarContainer {
+    padding: 1rem;
+    overflow-x: hidden;
+  }
 }
 
-.calendarContainer :global(.p-datepicker) {
-  border: none;
-  box-shadow: none;
-  background: transparent;
+.availableDate {
+  background-color: var(--primary-color);
+  color: var(--primary-color-text);
+  border-radius: 50%;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
 }
 
-.calendarContainer :global(.p-datepicker table) {
-  border: none;
+.bookedDate {
+  position: relative;
+  color: var(--color-text-muted);
+  opacity: 0.5;
 }
 
-.calendarContainer :global(.p-datepicker table td) {
-  border: none;
-}
-
-.calendarContainer :global(.p-datepicker table th) {
-  border: none;
-}
-
-.calendarContainer :global(.p-datepicker table td > span) {
-  border: none;
-}
-
-.calendarContainer :global(.p-datepicker .p-datepicker-header) {
-  border: none;
-}
-
-/* Override PrimeReact calendar colors to use theme */
-.calendarContainer
-  :global(.p-datepicker .p-datepicker-header .p-datepicker-prev),
-.calendarContainer
-  :global(.p-datepicker .p-datepicker-header .p-datepicker-next) {
-  color: var(--primary-color);
-}
-
-.calendarContainer
-  :global(.p-datepicker .p-datepicker-header .p-datepicker-prev:hover),
-.calendarContainer
-  :global(.p-datepicker .p-datepicker-header .p-datepicker-next:hover) {
-  background: rgba(var(--primary-color-rgb, 79, 70, 229), 0.1);
-  color: var(--primary-color);
-}
-
-.calendarContainer
-  :global(.p-datepicker .p-datepicker-header .p-datepicker-title) {
-  color: var(--color-text-heading);
-}
-
-/* Slot selector hover effects - scale up + subtle border glow */
-.calendarContainer :global(.p-datepicker table td > span) {
-  transition: var(--transition);
-  border-radius: var(--radius);
-}
-
-.calendarContainer
-  :global(
-    .p-datepicker table td > span:not(.p-disabled):not(.p-highlight):hover
-  ) {
-  transform: scale(1.02);
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 1px rgba(var(--primary-color-rgb, 79, 70, 229), 0.2);
-}
-
-.calendarContainer :global(.p-datepicker table td > span.p-highlight) {
-  background: var(--primary-color) !important;
-  color: white !important;
-  border-color: var(--primary-color) !important;
-}
-
-/* Override any other PrimeReact calendar accent colors */
-.calendarContainer :global(.p-datepicker table td > span.p-focus) {
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 1px rgba(var(--primary-color-rgb, 79, 70, 229), 0.2);
+.bookedDate::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background-color: var(--color-text-muted);
+  transform: translateY(-50%);
 }

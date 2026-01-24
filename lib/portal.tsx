@@ -15,15 +15,23 @@ export async function getNewsletterBySlug(slug: string) {
     return null;
   }
 
+  // Fetch the owner's profile to check Stripe status
+  const { data: ownerProfile } = await supabase
+    .from("profiles")
+    .select("stripe_account_id")
+    .eq("id", newsletter.owner_id)
+    .single();
+
   // Fetch inventory tiers separately for more reliability
   // Using .select() with explicit columns ensures RLS policies are respected
   const { data: tiers, error: tiersError } = await supabase
     .from("inventory_tiers")
     .select(
-      "id, name, price, type, description, is_active, specs_headline_limit, specs_body_limit, specs_image_ratio"
+      "id, name, price, type, format, description, is_active, specs_headline_limit, specs_body_limit, specs_image_ratio, is_archived"
     )
     .eq("newsletter_id", newsletter.id)
     .eq("is_active", true) // Only fetch active tiers
+    .eq("is_archived", false)
     .order("price", { ascending: true });
 
   if (tiersError) {
@@ -31,11 +39,13 @@ export async function getNewsletterBySlug(slug: string) {
     return {
       ...newsletter,
       inventory_tiers: [],
+      owner_profile: ownerProfile,
     };
   }
 
   return {
     ...newsletter,
     inventory_tiers: tiers || [],
+    owner_profile: ownerProfile,
   };
 }
