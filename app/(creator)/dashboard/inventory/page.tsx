@@ -1,7 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import Sidebar from "../Sidebar";
-import InventoryManager from "../settings/InventoryManager";
+import ProductManager from "./ProductManager";
 import styles from "./inventory.module.css";
 
 export default async function InventoryPage() {
@@ -17,13 +17,17 @@ export default async function InventoryPage() {
     .eq("owner_id", user.id)
     .single();
 
-  const { data: tiers } = newsletter
+  // Fetch products with asset requirements
+  const { data: products } = newsletter
     ? await supabase
-      .from("inventory_tiers")
-      .select("*")
+      .from("products")
+      .select(`
+          *,
+          asset_requirements (*)
+        `)
       .eq("newsletter_id", newsletter.id)
       .eq("is_archived", false)
-      .order("price", { ascending: true })
+      .order("created_at", { ascending: false })
     : { data: [] };
 
   return (
@@ -32,16 +36,16 @@ export default async function InventoryPage() {
       <div className="dashboard-content">
         <div className="dashboard-header mb-6">
           <div>
-            <h1>Inventory</h1>
+            <h1>Products</h1>
             <p className="dashboard-header-subtitle">
-              Manage your ad & sponsorship inventory
+              Manage your sponsorship products &amp; inventory
             </p>
           </div>
         </div>
 
         <div className={styles.container}>
-          <InventoryManager
-            initialTiers={tiers || []}
+          <ProductManager
+            initialProducts={products || []}
             newsletterId={newsletter?.id || ""}
           />
         </div>
@@ -49,3 +53,4 @@ export default async function InventoryPage() {
     </div>
   );
 }
+

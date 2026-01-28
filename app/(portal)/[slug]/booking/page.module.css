@@ -1,0 +1,30 @@
+.container {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  padding-bottom: 4rem;
+  /* Ensure space for footer */
+  background: linear-gradient(135deg, #229ebd30 0%, #229ebd7d 100%);
+  position: relative;
+}
+
+.poweredBy {
+  position: absolute;
+  bottom: 3rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.875rem;
+  /* 14px */
+  font-weight: 500;
+  color: var(--color-text-heading, #1e293b);
+  opacity: 0.5;
+  text-decoration: none;
+  transition: opacity 0.2s ease;
+  font-family: var(--font-body);
+}
+
+.poweredBy:hover {
+  opacity: 1;
+}

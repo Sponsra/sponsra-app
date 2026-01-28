@@ -1,0 +1,60 @@
+# Booking Page Cutover Plan: "The Wide Split"
+
+We are migrating the existing multi-step [BookingWizard](file:///Users/bronsonallen/Documents/dev/sponsra/app/%28portal%29/%5Bslug%5D/booking/BookingWizard.tsx#29-255) to the new "Wide Split" layout.
+
+## Goals
+1.  **Layout**: "Wide Split" design (Left Content + Right Sticky Sidebar) matching `/test/booking-1`.
+2.  **Tech**: React, CSS Modules (one per component), App Design Tokens ([globals.css](file:///Users/bronsonallen/Documents/dev/sponsra/app/styles/globals.css)).
+3.  **Functionality**: Preserve all existing logic (availability, locking, Stripe).
+
+## Architecture Changes
+
+### 1. Structure
+**New**: [BookingWizard](file:///Users/bronsonallen/Documents/dev/sponsra/app/%28portal%29/%5Bslug%5D/booking/BookingWizard.tsx#29-255) -> Render All Sections (Stacked)
+
+### 2. Component Layout & Styling
+We will create distinct components, each with its own `*.module.css` file.
+
+#### Layout
+-   [BookingWizard.tsx](file:///Users/bronsonallen/Documents/dev/sponsra/app/%28portal%29/%5Bslug%5D/booking/BookingWizard.tsx)
+-   [BookingWizard.module.css](file:///Users/bronsonallen/Documents/dev/sponsra/app/%28portal%29/%5Bslug%5D/booking/BookingWizard.module.css) (Grid layout, container)
+
+#### Components (Left Column)
+-   **Product Selector**
+    -   `ProductSelector.tsx`
+    -   `ProductSelector.module.css`
+-   **Date Selector**
+    -   `DateSelector.tsx`
+    -   `DateSelector.module.css`
+-   **Creative Details**
+    -   `CreativeSection.tsx`
+    -   `CreativeSection.module.css`
+
+#### Components (Right Sidebar)
+-   **Ad Preview** (Sticky, Top)
+    -   `AdPreview.tsx`
+    -   `AdPreview.module.css`
+-   **Order Summary** (Sticky, Bottom)
+    -   `OrderSummary.tsx`
+    -   `OrderSummary.module.css`
+
+## Migration Steps
+
+### Phase 1: Preparation
+1.  Create `app/(portal)/[slug]/booking/components/` directory.
+
+### Phase 2: Component Creation (Modular)
+1.  **ProductSelector**: Extract product card logic. Use `BookingLayout` design tokens.
+2.  **DateSelector**: Extract calendar logic.
+3.  **CreativeSection**: Refactor `StepCreative` into a focused form section.
+4.  **AdPreview**: Port from `booking-1` prototype.
+5.  **OrderSummary**: Port from `booking-1` prototype, ensuring it receives real data.
+
+### Phase 3: Assembly
+1.  Rewrite `BookingWizard.tsx` to assemble these components in the 2-column grid.
+2.  Ensure sticky behavior works for the right column.
+
+## Verification
+-   Verify all design tokens match `globals.css`.
+-   Verify responsiveness (mobile stack).
+-   Verify real-time updates between Creative Switch -> Ad Preview.
