@@ -1,7 +1,7 @@
 import { getNewsletterBySlug } from "@/lib/portal";
 import { notFound } from "next/navigation";
 import BookingWizard from "./BookingWizard";
-import { InventoryTierPublic } from "@/app/types/inventory";
+import { getActiveProducts } from "@/app/actions/products";
 import styles from "./page.module.css";
 
 interface PageProps {
@@ -18,9 +18,8 @@ export default async function AdBookingPage({ params }: PageProps) {
   // This prevents users from accessing broken payment flows via direct URL guessing.
   const isStripeConnected = !!(newsletter as any).owner_profile?.stripe_account_id;
 
-  const adTiers: InventoryTierPublic[] = (
-    newsletter.inventory_tiers || []
-  ).filter((t: InventoryTierPublic) => t.type === "ad" && t.is_active);
+  // Fetch active products for this newsletter
+  const products = await getActiveProducts(newsletter.id);
 
   // Use brand_color directly
   const brandColor = (newsletter as any).brand_color || "#0ea5e9";
@@ -44,7 +43,7 @@ export default async function AdBookingPage({ params }: PageProps) {
   return (
     <div className={styles.container}>
       <BookingWizard
-        tiers={adTiers}
+        products={products}
         newsletterName={newsletter.name}
         slug={slug}
         brandColor={brandColor}

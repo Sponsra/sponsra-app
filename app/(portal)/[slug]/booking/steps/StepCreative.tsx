@@ -11,8 +11,8 @@ import { InputText } from "primereact/inputtext";
 import { InputTextarea } from "primereact/inputtextarea";
 import { Button } from "primereact/button";
 import { Message } from "primereact/message";
-import { saveAdCreative } from "@/app/actions/bookings";
-import { InventoryTierPublic } from "@/app/types/inventory";
+import { createBookingWithAssets } from "@/app/actions/bookings";
+import { Product } from "@/app/types/product";
 import ImageUpload from "../components/ImageUpload";
 import NewsletterMockup from "@/app/components/NewsletterMockup";
 import styles from "./StepCreative.module.css";
@@ -26,6 +26,8 @@ interface StepCreativeContextType {
   setLink: (value: string) => void;
   sponsorName: string;
   setSponsorName: (value: string) => void;
+  email: string;
+  setEmail: (value: string) => void;
   imagePath: string | null;
   setImagePath: (path: string | null) => void;
   loading: boolean;
@@ -38,7 +40,9 @@ const StepCreativeContext = createContext<StepCreativeContextType | null>(null);
 interface StepCreativeProviderProps {
   newsletterName: string;
   bookingId: string;
-  tier: InventoryTierPublic;
+  slotId: string;
+  product: Product;
+  newsletterSlug: string;
   brandColor: string;
   initialSponsorName?: string;
   onBack: () => void;
@@ -47,6 +51,7 @@ interface StepCreativeProviderProps {
     body: string;
     link: string;
     sponsorName: string;
+    email: string;
     imagePath: string | null;
   }) => void;
   children: ReactNode;
@@ -55,7 +60,9 @@ interface StepCreativeProviderProps {
 function StepCreativeProvider({
   newsletterName,
   bookingId,
-  tier,
+  slotId,
+  product,
+  newsletterSlug,
   brandColor,
   initialSponsorName = "",
   onBack,
@@ -66,6 +73,7 @@ function StepCreativeProvider({
   const [body, setBody] = useState("");
   const [link, setLink] = useState("");
   const [sponsorName, setSponsorName] = useState(initialSponsorName);
+  const [email, setEmail] = useState("");
   const [imagePath, setImagePath] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -73,29 +81,56 @@ function StepCreativeProvider({
     setSponsorName(initialSponsorName);
   }, [initialSponsorName]);
 
+  // Extract constraints from asset requirements
+  const assetReqs = product.asset_requirements || [];
+  const headlineReq = assetReqs.find((r) => r.kind === "headline");
+  const bodyReq = assetReqs.find((r) => r.kind === "body");
+  const imageReq = assetReqs.find((r) => r.kind === "image");
+  const linkReq = assetReqs.find((r) => r.kind === "link");
+
+  const headlineLimit = headlineReq?.constraints?.maxChars || 60;
+  const bodyLimit = bodyReq?.constraints?.maxChars || 280;
+  // If requirement exists, it is required unless is_required is explicitly false
+  const imageRequired = imageReq?.is_required !== false && !!imageReq;
+  const headlineRequired = headlineReq?.is_required !== false && !!headlineReq;
+  const bodyRequired = bodyReq?.is_required !== false && !!bodyReq;
+  const linkRequired = linkReq?.is_required !== false && !!linkReq;
+
   // Check if all requirements are met
   const isFormValid = () => {
     // Check all required fields are filled
-    if (
-      !headline.trim() ||
-      !body.trim() ||
-      !link.trim() ||
-      !sponsorName.trim()
-    ) {
+    if (!sponsorName.trim() || !email.trim()) {
       return false;
     }
 
-    // Check character limits are not exceeded
-    if (headline.length > tier.specs_headline_limit) {
+    if (linkRequired && !link.trim()) {
       return false;
     }
 
-    if (body.length > tier.specs_body_limit) {
+    if (headlineRequired && !headline.trim()) {
+      return false;
+    }
+
+    if (bodyRequired && !body.trim()) {
+      return false;
+    }
+
+    // Basic email validation
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return false;
+    }
+
+    // Check character limits are not exceeded (if field exists)
+    if (headlineReq && headline.length > headlineLimit) {
+      return false;
+    }
+
+    if (bodyReq && body.length > bodyLimit) {
       return false;
     }
 
     // Check image is uploaded if required
-    if (tier.specs_image_ratio !== "no_image" && !imagePath) {
+    if (imageRequired && !imagePath) {
       return false;
     }
 
@@ -104,28 +139,28 @@ function StepCreativeProvider({
 
   const handleContinue = async () => {
     // Basic validation before sending
-    if (!headline || !body || !link || !sponsorName) {
-      alert("Please fill in all fields.");
+    if (!isFormValid()) {
+      alert("Please fill in all fields correctly.");
       return;
     }
 
     // Validate character limits
     const errors: string[] = [];
 
-    if (headline.length > tier.specs_headline_limit) {
+    if (headlineReq && headline.length > headlineLimit) {
       errors.push(
-        `Headline exceeds limit: ${headline.length}/${tier.specs_headline_limit} characters`
+        `Headline exceeds limit: ${headline.length}/${headlineLimit} characters`
       );
     }
 
-    if (body.length > tier.specs_body_limit) {
+    if (bodyReq && body.length > bodyLimit) {
       errors.push(
-        `Body text exceeds limit: ${body.length}/${tier.specs_body_limit} characters`
+        `Body text exceeds limit: ${body.length}/${bodyLimit} characters`
       );
     }
 
     // Validate image requirements
-    if (tier.specs_image_ratio !== "no_image" && !imagePath) {
+    if (imageRequired && !imagePath) {
       errors.push("An image is required for this ad type.");
     }
 
@@ -136,13 +171,22 @@ function StepCreativeProvider({
 
     setLoading(true);
 
-    const result = await saveAdCreative(bookingId, {
-      headline,
-      body,
-      link,
-      sponsorName,
-      imagePath,
-    });
+    const result = await createBookingWithAssets(
+      bookingId,
+      slotId,
+      product,
+      newsletterSlug,
+      {
+        name: sponsorName,
+        email,
+        link
+      },
+      {
+        headline,
+        body,
+        imagePath
+      }
+    );
 
     if (result.success) {
       onContinue({
@@ -150,6 +194,7 @@ function StepCreativeProvider({
         body,
         link,
         sponsorName,
+        email,
         imagePath,
       });
     } else {
@@ -169,6 +214,8 @@ function StepCreativeProvider({
         setLink,
         sponsorName,
         setSponsorName,
+        email,
+        setEmail,
         imagePath,
         setImagePath,
         loading,
@@ -202,13 +249,13 @@ function getImageRatioLabel(ratio: string) {
 }
 
 interface StepCreativeLeftProps {
-  tier: InventoryTierPublic;
+  product: Product;
   bookingId: string;
   stepIndicator?: ReactNode;
 }
 
 export function StepCreativeLeft({
-  tier,
+  product,
   bookingId,
   stepIndicator,
 }: StepCreativeLeftProps) {
@@ -221,6 +268,8 @@ export function StepCreativeLeft({
     setLink,
     sponsorName,
     setSponsorName,
+    email,
+    setEmail,
     imagePath,
     setImagePath,
     loading,
@@ -228,11 +277,23 @@ export function StepCreativeLeft({
     isFormValid,
   } = useStepCreative();
 
+  // Extract constraints
+  const assetReqs = product.asset_requirements || [];
+  const headlineReq = assetReqs.find((r) => r.kind === "headline");
+  const bodyReq = assetReqs.find((r) => r.kind === "body");
+  const imageReq = assetReqs.find((r) => r.kind === "image");
+  const linkReq = assetReqs.find((r) => r.kind === "link");
+
+  const headlineLimit = headlineReq?.constraints?.maxChars || 60;
+  const bodyLimit = bodyReq?.constraints?.maxChars || 280;
+  const imageRequired = imageReq?.is_required !== false && !!imageReq;
+  const imageAspectRatio: any = imageReq?.constraints?.aspectRatio || "any";
+
   return (
     <div className={styles.contentArea}>
       <h2 className={styles.cardTitle}>Creative & Assets</h2>
       <p className={styles.subtitle}>
-        Upload the copy and images for your <span className={styles.tierName}>{tier.name}</span> slot.
+        Upload the copy and images for your <span className={styles.tierName}>{product.name}</span> slot.
       </p>
 
       <div className={styles.formFields}>
@@ -252,112 +313,136 @@ export function StepCreativeLeft({
           </div>
 
           <div className={styles.fieldGroup}>
-            <label htmlFor="link" className={styles.label}>
-              Link URL
+            <label htmlFor="email" className={styles.label}>
+              Contact Email
             </label>
             <InputText
-              id="link"
-              value={link}
-              onChange={(e) => setLink(e.target.value)}
-              placeholder="https://..."
+              id="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="name@company.com"
               className={styles.input}
+              type="email"
             />
           </div>
+
+          {linkReq && (
+            <div className={styles.fieldGroup}>
+              <label htmlFor="link" className={styles.label}>
+                {linkReq.label || "Link URL"}
+              </label>
+              <InputText
+                id="link"
+                value={link}
+                onChange={(e) => setLink(e.target.value)}
+                placeholder="https://..."
+                className={styles.input}
+              />
+            </div>
+          )}
         </div>
 
         {/* Visual Section */}
-        {tier.specs_image_ratio !== "no_image" ? (
+        {imageReq ? (
           <div className={styles.imageSection}>
-            <div className={styles.imageSectionTitle}>Ad Image</div>
+            <div className={styles.imageSectionTitle}>
+              {imageReq.label || "Ad Image"} {imageRequired ? "(Required)" : "(Optional)"}
+            </div>
             <div className={styles.imageSectionHelp}>
-              Required Ratio: {getImageRatioLabel(tier.specs_image_ratio)}
+              Required Ratio: {getImageRatioLabel(imageAspectRatio)}
             </div>
             <ImageUpload
               bookingId={bookingId}
               onUploadComplete={(path) => setImagePath(path)}
-              requiredAspectRatio={tier.specs_image_ratio}
+              requiredAspectRatio={imageAspectRatio}
             />
           </div>
         ) : (
           <Message
             severity="info"
-            text="This tier is text-only. No image required."
+            text="This format is text-only. No image required."
             style={{ margin: 0 }}
           />
         )}
 
         {/* Copy Section */}
-        <div className={styles.copySection}>
-          <div className={styles.fieldGroup}>
-            <div className={styles.labelRow}>
-              <label htmlFor="headline" className={styles.label}>
-                Headline
-              </label>
-              <small
-                className={`${styles.charCount} ${headline.length >= tier.specs_headline_limit
-                  ? styles.charCountWarning
-                  : ""
-                  }`}
-              >
-                {headline.length}/{tier.specs_headline_limit}
-              </small>
-            </div>
-            <InputText
-              id="headline"
-              value={headline}
-              onChange={(e) => {
-                const value = e.target.value;
-                if (value.length <= tier.specs_headline_limit) {
-                  setHeadline(value);
-                }
-              }}
-              placeholder="Catchy title"
-              className={`${styles.input} ${headline.length > tier.specs_headline_limit ? "p-invalid" : ""
-                }`}
-            />
-            {headline.length > tier.specs_headline_limit && (
-              <small className={styles.errorText}>
-                Headline exceeds limit by{" "}
-                {headline.length - tier.specs_headline_limit} characters
-              </small>
+        {(headlineReq || bodyReq) && (
+          <div className={styles.copySection}>
+            {headlineReq && (
+              <div className={styles.fieldGroup}>
+                <div className={styles.labelRow}>
+                  <label htmlFor="headline" className={styles.label}>
+                    {headlineReq.label || "Headline"}
+                  </label>
+                  <small
+                    className={`${styles.charCount} ${headline.length >= headlineLimit
+                      ? styles.charCountWarning
+                      : ""
+                      }`}
+                  >
+                    {headline.length}/{headlineLimit}
+                  </small>
+                </div>
+                <InputText
+                  id="headline"
+                  value={headline}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value.length <= headlineLimit) {
+                      setHeadline(value);
+                    }
+                  }}
+                  placeholder="Catchy title"
+                  className={`${styles.input} ${headline.length > headlineLimit ? "p-invalid" : ""
+                    }`}
+                />
+                {headline.length > headlineLimit && (
+                  <small className={styles.errorText}>
+                    Headline exceeds limit by{" "}
+                    {headline.length - headlineLimit} characters
+                  </small>
+                )}
+              </div>
             )}
-          </div>
 
-          <div className={styles.fieldGroup}>
-            <div className={styles.labelRow}>
-              <label htmlFor="body" className={styles.label}>
-                Body Text
-              </label>
-              <small
-                className={`${styles.charCount} ${body.length >= tier.specs_body_limit
-                  ? styles.charCountWarning
-                  : ""
-                  }`}
-              >
-                {body.length}/{tier.specs_body_limit}
-              </small>
-            </div>
-            <InputTextarea
-              id="body"
-              value={body}
-              onChange={(e) => {
-                const value = e.target.value;
-                if (value.length <= tier.specs_body_limit) {
-                  setBody(value);
-                }
-              }}
-              rows={4}
-              placeholder="Your main message..."
-              className={`w-full ${styles.textarea}`}
-            />
-            {body.length > tier.specs_body_limit && (
-              <small className={styles.errorText}>
-                Body text exceeds limit by {body.length - tier.specs_body_limit}{" "}
-                characters
-              </small>
+            {bodyReq && (
+              <div className={styles.fieldGroup}>
+                <div className={styles.labelRow}>
+                  <label htmlFor="body" className={styles.label}>
+                    {bodyReq.label || "Body Text"}
+                  </label>
+                  <small
+                    className={`${styles.charCount} ${body.length >= bodyLimit
+                      ? styles.charCountWarning
+                      : ""
+                      }`}
+                  >
+                    {body.length}/{bodyLimit}
+                  </small>
+                </div>
+                <InputTextarea
+                  id="body"
+                  value={body}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value.length <= bodyLimit) {
+                      setBody(value);
+                    }
+                  }}
+                  rows={4}
+                  placeholder="Your main message..."
+                  className={`w-full ${styles.textarea}`}
+                />
+                {body.length > bodyLimit && (
+                  <small className={styles.errorText}>
+                    Body text exceeds limit by {body.length - bodyLimit}{" "}
+                    characters
+                  </small>
+                )}
+              </div>
             )}
           </div>
-        </div>
+        )}
       </div>
 
       {/* Button Container */}
@@ -383,16 +468,21 @@ export function StepCreativeLeft({
 
 interface StepCreativeRightProps {
   newsletterName: string;
-  tier: InventoryTierPublic;
+  product: Product;
   brandColor: string;
 }
 
 export function StepCreativeRight({
   newsletterName,
-  tier,
+  product,
   brandColor,
 }: StepCreativeRightProps) {
   const { headline, body, link, sponsorName, imagePath } = useStepCreative();
+
+  // Extract constraints
+  const assetReqs = product.asset_requirements || [];
+  const imageReq = assetReqs.find((r) => r.kind === "image");
+  const imageRequired = imageReq?.is_required !== false && !!imageReq;
 
   return (
     <div className={styles.previewContainer}>
@@ -436,7 +526,7 @@ export function StepCreativeRight({
               body: body || "Your ad body text will appear here...",
               link: link,
               imagePath:
-                tier.specs_image_ratio !== "no_image" ? imagePath : null,
+                imagePath || null,
             }}
           />
         </div>

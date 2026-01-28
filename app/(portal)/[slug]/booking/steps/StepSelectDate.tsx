@@ -11,13 +11,18 @@ import {
 import { Calendar } from "primereact/calendar";
 import type { CalendarDateTemplateEvent } from "primereact/calendar";
 import { Button } from "primereact/button";
-import { createBooking, getAvailableDates } from "@/app/actions/bookings";
+import { getAvailableDates, holdSlot } from "@/app/actions/inventory-slots";
 import {
-  InventoryTierPublic,
-  DateAvailabilityStatus,
-  FORMAT_DEFAULTS,
-} from "@/app/types/inventory";
+  Product,
+  InventorySlot,
+  SlotAvailability,
+  ProductType,
+  FREQUENCY_LABELS,
+  PRODUCT_TYPE_LABELS,
+  ASSET_KIND_LABELS
+} from "@/app/types/product";
 import styles from "./StepSelectDate.module.css";
+
 
 // Helper to convert date string to Date object
 const toDateFromString = (dateStr: string): Date => {
@@ -34,15 +39,16 @@ const formatDateString = (date: Date): string => {
 };
 
 interface StepSelectDateContextType {
-  selectedTier: InventoryTierPublic | null;
-  setSelectedTier: (tier: InventoryTierPublic | null) => void;
+  selectedProduct: Product | null;
+  setSelectedProduct: (product: Product | null) => void;
   date: Date | null;
   setDate: (date: Date | null) => void;
   loading: boolean;
   disabledDates: Date[];
-  availabilityMap: Map<string, DateAvailabilityStatus>;
+  availabilityMap: Map<string, SlotAvailability>;
   dateRange: { start: string; end: string };
   handleSubmit: () => Promise<void>;
+  hasFetched: boolean;
 }
 
 const StepSelectDateContext = createContext<StepSelectDateContextType | null>(
@@ -50,38 +56,53 @@ const StepSelectDateContext = createContext<StepSelectDateContextType | null>(
 );
 
 interface StepSelectDateProviderProps {
-  tiers: InventoryTierPublic[];
+  products: Product[];
   slug: string;
   onContinue: (
-    tier: InventoryTierPublic,
+    product: Product,
     date: Date,
-    bookingId: string
+    slotId: string
   ) => void;
   children: ReactNode;
 }
 
 function StepSelectDateProvider({
-  tiers,
+  products,
   slug,
   onContinue,
   children,
 }: StepSelectDateProviderProps) {
-  const [selectedTier, setSelectedTier] = useState<InventoryTierPublic | null>(
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(
     null
   );
   const [date, setDate] = useState<Date | null>(null);
   const [loading, setLoading] = useState(false);
+  const [hasFetched, setHasFetched] = useState(false);
   const [disabledDates, setDisabledDates] = useState<Date[]>([]);
   const [availabilityMap, setAvailabilityMap] = useState<
-    Map<string, DateAvailabilityStatus>
+    Map<string, SlotAvailability>
   >(new Map());
+
+  // Session ID for holding slots (generated once per session)
+  const [sessionId] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem('booking_session_id') || crypto.randomUUID();
+    }
+    return ''; // Server-side fallback (though this runs client-side usually)
+  });
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('booking_session_id', sessionId);
+    }
+  }, [sessionId]);
 
   // Calculate date range (1-3 months from today)
   const dateRange = useMemo(() => {
     const start = new Date();
-    start.setDate(1); // Start of current month
+    // start.setDate(1); // Start of current month - actually start from today
     const end = new Date();
-    end.setMonth(end.getMonth() + 3); // 3 months ahead
+    end.setMonth(end.getMonth() + 4); // 4 months ahead to be safe
     end.setDate(0); // Last day of that month
     return {
       start: formatDateString(start),
@@ -89,44 +110,48 @@ function StepSelectDateProvider({
     };
   }, []);
 
-  // Fetch availability dates whenever the user picks a tier
+  // Fetch availability dates whenever the user picks a product
   useEffect(() => {
-    if (!selectedTier) {
+    if (!selectedProduct) {
       setAvailabilityMap(new Map());
       setDisabledDates([]);
+      setHasFetched(false);
       return;
     }
 
     const fetchAvailability = async () => {
       try {
         const availability = await getAvailableDates(
-          selectedTier.id,
+          selectedProduct.id,
           dateRange.start,
           dateRange.end
         );
 
-        // Build availability map
-        const map = new Map<string, DateAvailabilityStatus>();
+        // Build availability map (map date string to SlotAvailability object)
+        const map = new Map<string, SlotAvailability>();
         availability.forEach((item) => {
           map.set(item.date, item);
         });
 
-        // Build disabled dates array (booked + unavailable)
+        // Build disabled dates array (sold out dates)
         const disabled: Date[] = [];
         availability.forEach((item) => {
-          if (item.status !== "available") {
+          // Disable if 0 available slots
+          if (item.available_slots === 0) {
             disabled.push(toDateFromString(item.date));
           }
         });
 
         setAvailabilityMap(map);
         setDisabledDates(disabled);
+        setHasFetched(true);
 
-        // If the currently selected date is no longer available, clear it
+        // If the currently selected date is no longer available/valid, clear it
         if (date) {
           const dateStr = formatDateString(date);
-          const status = map.get(dateStr);
-          if (!status || status.status !== "available") {
+          const availabilityItem = map.get(dateStr);
+          // If date not in map (not a valid slot date) or no available slots
+          if (!availabilityItem || availabilityItem.available_slots === 0) {
             setDate(null);
           }
         }
@@ -134,6 +159,7 @@ function StepSelectDateProvider({
         console.error("Error fetching availability:", error);
         setAvailabilityMap(new Map());
         setDisabledDates([]);
+        setHasFetched(true);
       }
     };
 
@@ -145,31 +171,41 @@ function StepSelectDateProvider({
     const pollInterval = setInterval(fetchAvailability, 10000);
 
     return () => clearInterval(pollInterval);
-  }, [selectedTier, dateRange, date]);
+  }, [selectedProduct, dateRange, date]);
 
   const handleSubmit = async () => {
-    if (!date || !selectedTier) return;
+    if (!date || !selectedProduct) return;
 
-    // Validate date is within calculated range (safety check)
+    // Validate date has available slots
     const dateStr = formatDateString(date);
-    if (dateStr < dateRange.start || dateStr > dateRange.end) {
-      alert(
-        "This date is outside the available booking range. Please select a date within the next 3 months."
-      );
+    const availabilityItem = availabilityMap.get(dateStr);
+
+    if (!availabilityItem || availabilityItem.available_slots === 0) {
+      alert("This date is no longer available.");
       setDate(null);
+      return;
+    }
+
+    // Find the first available slot
+    // We prioritize 'available' status. If held by us (same session), we can also use it.
+    const availableSlot = availabilityItem.slots.find(s => s.status === 'available');
+
+    if (!availableSlot) {
+      alert("No available slots found for this date.");
       return;
     }
 
     setLoading(true);
 
-    const result = await createBooking(selectedTier.id, date, slug);
+    // Hold the slot
+    const result = await holdSlot(availableSlot.id, sessionId);
 
-    if (result.success && result.bookingId) {
-      onContinue(selectedTier, date, result.bookingId);
+    if (result.success) {
+      onContinue(selectedProduct, date, availableSlot.id);
     } else {
       // Show error - the polling mechanism will refresh availability automatically
       alert(
-        result.message || "Unable to book this date. Please select another."
+        result.error || "Unable to hold this date. It may have just been taken."
       );
       setDate(null);
     }
@@ -180,8 +216,8 @@ function StepSelectDateProvider({
   return (
     <StepSelectDateContext.Provider
       value={{
-        selectedTier,
-        setSelectedTier,
+        selectedProduct,
+        setSelectedProduct,
         date,
         setDate,
         loading,
@@ -189,6 +225,7 @@ function StepSelectDateProvider({
         availabilityMap,
         dateRange,
         handleSubmit,
+        hasFetched,
       }}
     >
       {children}
@@ -207,36 +244,32 @@ function useStepSelectDate() {
 }
 
 interface StepSelectDateLeftProps {
-  tiers: InventoryTierPublic[];
+  products: Product[];
   newsletterName: string;
   stepIndicator?: ReactNode;
 }
 
 export function StepSelectDateLeft({
-  tiers,
+  products,
   newsletterName,
   stepIndicator,
 }: StepSelectDateLeftProps) {
-  const { selectedTier, setSelectedTier, date, loading, handleSubmit } =
+  const { selectedProduct, setSelectedProduct, date, loading, handleSubmit } =
     useStepSelectDate();
 
   return (
     <div className={styles.contentArea || ""}>
       <div className={styles.formContent || ""}>
         <h2 className={styles.cardTitle || ""}>Advertise with {newsletterName}</h2>
-        {/* <p className={styles.subtitle || ""}>
-          Reach 15,000 engaged readers in the Tech/Software industry.
-        </p> */}
         <div className={styles.fieldGroup || ""}>
           <div className={styles.sectionHeader}>
-            {/* <h3 className={styles.sectionTitle}>1. Choose a Placement</h3> */}
             <p className={styles.sectionSubtitle}>
               Select the ad format that fits your campaign goals.
             </p>
           </div>
           <div className={styles.tierCards || ""}>
-            {tiers.map((tier) => {
-              const isSelected = selectedTier?.id === tier.id;
+            {products.map((product) => {
+              const isSelected = selectedProduct?.id === product.id;
               const cardClassName = [
                 styles.tierCard,
                 isSelected
@@ -245,15 +278,21 @@ export function StepSelectDateLeft({
               ]
                 .filter(Boolean)
                 .join(" ");
+
+              const assetReqs = product.asset_requirements || [];
+              const hasImage = assetReqs.some(r => r.kind === 'image');
+              const headlineReq = assetReqs.find(r => r.kind === 'headline');
+              const bodyReq = assetReqs.find(r => r.kind === 'body');
+
               return (
                 <button
-                  key={tier.id}
+                  key={product.id}
                   type="button"
                   className={cardClassName}
-                  onClick={() => setSelectedTier(tier)}
+                  onClick={() => setSelectedProduct(product)}
                 >
                   <div className={styles.tierCardHeader || ""}>
-                    <div className={styles.tierCardName || ""}>{tier.name}</div>
+                    <div className={styles.tierCardName || ""}>{product.name}</div>
                     {isSelected && (
                       <i
                         className={`pi pi-check ${styles.tierCardCheck || ""}`}
@@ -261,31 +300,36 @@ export function StepSelectDateLeft({
                     )}
                   </div>
                   <div className={styles.tierCardPrice || ""}>
-                    ${(tier.price / 100).toFixed(2)}
+                    ${(product.price / 100).toFixed(2)}
                   </div>
-                  {isSelected && tier.description && (
+                  {isSelected && product.description && (
                     <div className={styles.tierCardDescription || ""}>
-                      {tier.description}
+                      {product.description}
                     </div>
                   )}
                   {isSelected && (
                     <div className={styles.tierCardRequirements || ""}>
                       <div className={styles.requirementsTitle || ""}>
-                        {FORMAT_DEFAULTS[tier.format]?.label || "Hero"} Format
+                        {PRODUCT_TYPE_LABELS[product.product_type]} Format
                       </div>
                       <div className={styles.requirementsList || ""}>
                         <div>
-                          • Headline: {tier.specs_headline_limit} chars
+                          • {FREQUENCY_LABELS[product.frequency]}
                         </div>
-                        {tier.specs_body_limit > 0 && (
+                        {headlineReq && (
                           <div>
-                            • Body: {tier.specs_body_limit} chars
+                            • Headline: {headlineReq.constraints.maxChars} chars
+                          </div>
+                        )}
+                        {bodyReq && (
+                          <div>
+                            • Body: {bodyReq.constraints.maxChars} chars
                           </div>
                         )}
                         <div>
-                          {tier.specs_image_ratio === "no_image"
-                            ? "• Text only (no image)"
-                            : `• Image required`}
+                          {hasImage
+                            ? "• Image required"
+                            : "• Text only (no image)"}
                         </div>
                       </div>
                     </div>
@@ -305,7 +349,7 @@ export function StepSelectDateLeft({
           iconPos="right"
           onClick={handleSubmit}
           loading={loading}
-          disabled={!date || !selectedTier}
+          disabled={!date || !selectedProduct}
           className={`w-full ${styles.submitButton}`}
         />
 
@@ -320,12 +364,13 @@ export function StepSelectDateLeft({
 
 export function StepSelectDateRight() {
   const {
-    selectedTier,
+    selectedProduct,
     date,
     setDate,
     disabledDates,
     availabilityMap,
     dateRange,
+    hasFetched,
   } = useStepSelectDate();
 
   // Calculate max date from date range
@@ -335,16 +380,11 @@ export function StepSelectDateRight() {
 
   // Check if there are any available dates (excluding disabled ones)
   const hasAvailability = useMemo(() => {
-    // If loading, assume availability (or show loading state)
-    // If map is empty, we might not have fetched yet or there are no slots.
-    // relying on availabilityMap to contain all dates in range with status.
-    // If map has entries, check if any are 'available'.
     if (availabilityMap.size === 0) return false;
 
-    // We also need to check if the dates are in validity range?
-    // The map contains statuses for the fetched range.
-    for (const status of availabilityMap.values()) {
-      if (status.status === "available") return true;
+    // Check if any date has available_slots > 0
+    for (const item of availabilityMap.values()) {
+      if (item.available_slots > 0) return true;
     }
     return false;
   }, [availabilityMap]);
@@ -356,38 +396,42 @@ export function StepSelectDateRight() {
     const month = String(event.month + 1).padStart(2, "0");
     const day = String(event.day).padStart(2, "0");
     const dateStr = `${year}-${month}-${day}`;
-    const status = availabilityMap.get(dateStr);
 
-    if (status && status.status === "available") {
-      return <span className={styles.availableDate}>{event.day}</span>;
+    // Check if this date is a VALID slot date (exists in map)
+    const availabilityItem = availabilityMap.get(dateStr);
+
+    if (availabilityItem) {
+      if (availabilityItem.available_slots > 0) {
+        // Check if sparse availability (e.g. 1 left)
+        const isLow = availabilityItem.available_slots === 1; // Example logic
+        return <span className={`${styles.availableDate} ${isLow ? styles.lowStock : ''}`}>{event.day}</span>;
+      } else {
+        return <span className={styles.bookedDate}>{event.day}</span>;
+      }
     }
 
-    if (status && status.status === "booked") {
-      return <span className={styles.bookedDate}>{event.day}</span>;
-    }
-
+    // Default (not a slot date)
     return event.day;
   };
 
-  if (!selectedTier) {
+  if (!selectedProduct) {
     return (
       <div className={styles.calendarEmptyState}>
-        <p>Please select a placement to view availability.</p>
+        <p>Please select a product to view availability.</p>
       </div>
     );
   }
 
   // If we have fetched availability (map has size > 0) and found no available dates
-  // AND we are not selected on a valid date (in case map update lagged)
-  // Actually, simpler: if availabilityMap is populated and hasAvailability is false.
-  const isSoldOut = availabilityMap.size > 0 && !hasAvailability;
+  // OR if we have fetched and map is empty (no slots generated)
+  const isSoldOut = hasFetched && !hasAvailability;
 
   return (
     <div className={styles.calendarWrapper}>
       <div className={styles.rightHeader}>
         <h3 className={styles.sectionTitle}>2. Select a Date</h3>
         <p className={styles.sectionSubtitle}>
-          Available slots for <strong>{selectedTier.name}</strong>:
+          Available slots for <strong>{selectedProduct.name}</strong>:
         </p>
       </div>
 
@@ -395,7 +439,7 @@ export function StepSelectDateRight() {
         {isSoldOut ? (
           <div className={styles.soldOutState}>
             <h4 className={styles.soldOutTitle}>Sold Out</h4>
-            <p className={styles.soldOutText}>There are no available slots for this placement right now. Please check back later.</p>
+            <p className={styles.soldOutText}>There are no available slots for this product right now. Please check back later.</p>
           </div>
         ) : (
           <Calendar
@@ -405,7 +449,7 @@ export function StepSelectDateRight() {
             minDate={new Date()}
             maxDate={maxDate}
             disabledDates={disabledDates}
-            disabled={!selectedTier}
+            disabled={!selectedProduct}
             dateTemplate={dateTemplate}
           />
         )}

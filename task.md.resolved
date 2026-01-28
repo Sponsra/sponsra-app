@@ -1,0 +1,30 @@
+# Booking Page Cutover: Wide Split (Modular)
+
+- [x] Planning
+    - [x] Analyze existing code <!-- id: 12 -->
+    - [x] Create detailed migration plan <!-- id: 13 -->
+    - [x] Review Design Tokens ([globals.css](file:///Users/bronsonallen/Documents/dev/sponsra/app/styles/globals.css)) <!-- id: 14 -->
+- [ ] Implementation
+    - [ ] Setup `components` directory in `app/(portal)/[slug]/booking/` <!-- id: 22 -->
+    - [ ] Implement `ProductSelector`
+        - [ ] Creating `ProductSelector.tsx` logic (from `StepSelectDate`) <!-- id: 23 -->
+        - [ ] Styling `ProductSelector.module.css` <!-- id: 24 -->
+    - [ ] Implement `DateSelector`
+        - [ ] Creating `DateSelector.tsx` logic (from `StepSelectDate`) <!-- id: 25 -->
+        - [ ] Styling `DateSelector.module.css` <!-- id: 26 -->
+    - [ ] Implement `CreativeSection`
+        - [ ] Refactor `StepCreative.tsx` to `CreativeSection.tsx` <!-- id: 27 -->
+        - [ ] Styling `CreativeSection.module.css` <!-- id: 28 -->
+    - [ ] Implement `AdPreview`
+        - [ ] Port `AdPreview.tsx` from prototype <!-- id: 29 -->
+        - [ ] Styling `AdPreview.module.css` <!-- id: 30 -->
+    - [ ] Implement `OrderSummary`
+        - [ ] Port `OrderSummary.tsx` from prototype <!-- id: 31 -->
+        - [ ] Styling `OrderSummary.module.css` <!-- id: 32 -->
+    - [ ] Assembly
+        - [ ] Update `BookingWizard.tsx` layout (Grid) <!-- id: 33 -->
+        - [ ] Create `BookingWizard.module.css` <!-- id: 34 -->
+- [ ] Verification
+    - [ ] Verify slot locking & availability logic <!-- id: 20 -->
+    - [ ] Verify functionality (Data Submission) <!-- id: 35 -->
+    - [ ] Verify Responsive Layout (Sticky Sidebar checks) <!-- id: 21 -->

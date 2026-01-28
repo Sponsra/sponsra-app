@@ -8,7 +8,7 @@ import {
 } from "react";
 import { Button } from "primereact/button";
 import { createBookingCheckout } from "@/app/actions/bookings";
-import { InventoryTierPublic } from "@/app/types/inventory";
+import { Product } from "@/app/types/product";
 import NewsletterMockup from "@/app/components/NewsletterMockup";
 import styles from "./StepReview.module.css";
 
@@ -27,7 +27,7 @@ const StepReviewContext = createContext<StepReviewContextType | null>(null);
 interface StepReviewProviderProps {
   newsletterName: string;
   bookingId: string;
-  tier: InventoryTierPublic;
+  product: Product;
   date: Date;
   brandColor: string;
   creative: {
@@ -44,7 +44,7 @@ interface StepReviewProviderProps {
 function StepReviewProvider({
   newsletterName,
   bookingId,
-  tier,
+  product,
   date,
   brandColor,
   creative,
@@ -93,13 +93,13 @@ function useStepReview() {
 }
 
 interface StepReviewLeftProps {
-  tier: InventoryTierPublic;
+  product: Product;
   date: Date;
   stepIndicator?: ReactNode;
 }
 
 export function StepReviewLeft({
-  tier,
+  product,
   date,
   stepIndicator,
 }: StepReviewLeftProps) {
@@ -128,9 +128,9 @@ export function StepReviewLeft({
         <div className={styles.orderItem}>
           <div className={styles.orderItemLabel}>Main Slot</div>
           <div className={styles.orderItemValue}>
-            <div className={styles.orderItemName}>{tier.name}</div>
+            <div className={styles.orderItemName}>{product.name}</div>
             <div className={styles.orderItemPrice}>
-              ${(tier.price / 100).toFixed(2)}
+              ${(product.price / 100).toFixed(2)}
             </div>
           </div>
         </div>
@@ -147,7 +147,7 @@ export function StepReviewLeft({
         <div className={styles.orderTotal}>
           <div className={styles.orderTotalLabel}>Total Due</div>
           <div className={styles.orderTotalAmount}>
-            ${(tier.price / 100).toFixed(2)}
+            ${(product.price / 100).toFixed(2)}
           </div>
         </div>
       </div>
@@ -172,16 +172,21 @@ export function StepReviewLeft({
 
 interface StepReviewRightProps {
   newsletterName: string;
-  tier: InventoryTierPublic;
+  product: Product;
   brandColor: string;
 }
 
 export function StepReviewRight({
   newsletterName,
-  tier,
+  product,
   brandColor,
 }: StepReviewRightProps) {
   const { headline, body, link, sponsorName, imagePath } = useStepReview();
+
+  // Extract constraints
+  const assetReqs = product.asset_requirements || [];
+  const imageReq = assetReqs.find((r) => r.kind === "image");
+  const imageRequired = imageReq?.is_required !== false && !!imageReq;
 
   return (
     <div className={styles.previewContainer}>
@@ -221,8 +226,7 @@ export function StepReviewRight({
               headline: headline || "Your Headline Here",
               body: body || "Your ad body text will appear here...",
               link: link,
-              imagePath:
-                tier.specs_image_ratio !== "no_image" ? imagePath : null,
+              imagePath: imagePath,
             }}
           />
         </div>

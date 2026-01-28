@@ -1,0 +1,189 @@
+/* ImageUpload Component Styles */
+
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-text-heading);
+}
+
+.required {
+    color: var(--color-error-text);
+    margin-left: 0.25rem;
+}
+
+.constraint {
+    font-size: 0.75rem;
+    color: var(--color-text-body);
+    font-weight: 400;
+    margin-left: 0.5rem;
+}
+
+.helperText {
+    font-size: 0.75rem;
+    color: var(--color-text-body);
+    margin: 0;
+}
+
+.dropzone {
+    position: relative;
+    border: 2px dashed var(--color-border);
+    border-radius: var(--radius);
+    padding: 2rem;
+    background-color: var(--color-bg-off-white);
+    cursor: pointer;
+    transition: all 0.2s;
+    min-height: 150px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dropzone:hover {
+    border-color: var(--primary-400);
+    background-color: var(--primary-50);
+}
+
+.dropzoneDragging {
+    border-color: var(--primary-500);
+    background-color: var(--primary-50);
+    box-shadow: 0 0 0 4px rgba(var(--primary-color-rgb), 0.1);
+}
+
+.dropzoneWithPreview {
+    padding: 0;
+    cursor: default;
+    background-color: transparent;
+}
+
+.dropzoneWithPreview:hover {
+    background-color: transparent;
+}
+
+.fileInput {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    text-align: center;
+}
+
+.icon {
+    color: var(--color-text-body);
+    opacity: 0.6;
+}
+
+.placeholderText {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-text-heading);
+}
+
+.placeholderSubtext {
+    font-size: 0.75rem;
+    color: var(--color-text-body);
+}
+
+.uploading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--primary-500);
+}
+
+.spinner {
+    width: 24px;
+    height: 24px;
+    border: 2px solid var(--primary-200);
+    border-top-color: var(--primary-500);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.preview {
+    position: relative;
+    width: 100%;
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+.previewImage {
+    width: 100%;
+    height: auto;
+    max-height: 300px;
+    object-fit: contain;
+    display: block;
+}
+
+.previewOverlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.preview:hover .previewOverlay {
+    opacity: 1;
+}
+
+.replaceBtn,
+.removeBtn {
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+}
+
+.replaceBtn {
+    background-color: white;
+    color: var(--color-text-heading);
+}
+
+.replaceBtn:hover {
+    background-color: var(--color-bg-off-white);
+}
+
+.removeBtn {
+    background-color: var(--color-error-text);
+    color: white;
+}
+
+.removeBtn:hover {
+    opacity: 0.9;
+}
+
+.error {
+    font-size: 0.75rem;
+    color: var(--color-error-text);
+    margin: 0;
+    padding: 0.25rem 0;
+}

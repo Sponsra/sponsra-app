@@ -9,36 +9,23 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-12-15.clover" as any,
 });
 
+import { getBookingForCheckout } from "@/app/actions/bookings";
+
+// ... existing imports
+
 export async function createCheckoutSession(bookingId: string) {
-  const supabase = await createClient();
+  // Fetch booking details using the new helper
+  const bookingData = await getBookingForCheckout(bookingId);
 
-  const { data, error } = await supabase.rpc("get_checkout_data", {
-    p_booking_id: bookingId,
-  });
-
-  if (error) {
-    console.error("Checkout Data Error:", error);
-    throw new Error(`Could not retrieve booking details: ${error.message}`);
-  }
-
-  if (!data) {
-    console.error(
-      "Checkout Data Error: No data returned for booking",
-      bookingId
-    );
+  if (!bookingData) {
     throw new Error(
       "Could not retrieve booking details. Booking may not exist or be missing required information."
     );
   }
 
-  const { price, tier_name, stripe_account_id, newsletter_slug } = data as {
-    price: number;
-    tier_name: string;
-    stripe_account_id: string;
-    newsletter_slug: string;
-  };
+  const { booking, product, newsletter, stripeAccountId } = bookingData;
 
-  if (!stripe_account_id)
+  if (!stripeAccountId)
     throw new Error("Creator has not connected a payout account.");
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
@@ -49,22 +36,21 @@ export async function createCheckoutSession(bookingId: string) {
       {
         price_data: {
           currency: "usd",
-          product_data: { name: tier_name },
-          unit_amount: price,
+          product_data: { name: product.name }, // Use product name
+          unit_amount: product.price, // Use product price
         },
         quantity: 1,
       },
     ],
     mode: "payment",
     payment_intent_data: {
-      application_fee_amount: Math.round(price * 0.1),
-      transfer_data: { destination: stripe_account_id },
+      application_fee_amount: Math.round(product.price * 0.1), // 10% fee
+      transfer_data: { destination: stripeAccountId },
     },
     metadata: { booking_id: bookingId },
-    success_url: `${baseUrl}/${newsletter_slug}/ad?success=true&session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${baseUrl}/${newsletter_slug}/ad`,
+    success_url: `${baseUrl}/${newsletter.slug}/booking?success=true&session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${baseUrl}/${newsletter.slug}/booking`,
   });
 
-  // CHANGE: Return the URL object instead of redirecting
   return { url: session.url };
 }
